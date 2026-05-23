@@ -1,6 +1,8 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 
-export function Particles({ count = 30, color = "var(--gold)" }: { count?: number; color?: string }) {
+export function Particles({ count = 30, color }: { count?: number; color?: string }) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const particles = useMemo(
     () =>
       Array.from({ length: count }).map((_, i) => ({
@@ -13,6 +15,8 @@ export function Particles({ count = 30, color = "var(--gold)" }: { count?: numbe
       })),
     [count],
   );
+  if (!mounted) return null;
+  const c = color ?? "var(--gold)";
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {particles.map((p) => (
@@ -23,11 +27,11 @@ export function Particles({ count = 30, color = "var(--gold)" }: { count?: numbe
             left: `${p.left}%`,
             width: p.size,
             height: p.size,
-            background: color,
+            background: c,
             opacity: p.opacity,
             animationDuration: `${p.duration}s`,
             animationDelay: `${p.delay}s`,
-            boxShadow: `0 0 ${p.size * 3}px ${color}`,
+            boxShadow: `0 0 ${p.size * 3}px ${c}`,
           }}
         />
       ))}
