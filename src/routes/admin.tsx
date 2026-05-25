@@ -1,407 +1,653 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { useSite, setState, resetState, isAuthed, login, logout, type EventItem, type Contact } from "@/lib/siteStore";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import jsPDF from "jspdf";
+import {
+  useSite,
+  setState,
+  resetState,
+  login,
+  logout,
+  isAuthed,
+  uid,
+  THEME_PRESETS,
+  FONT_PRESETS,
+  type Section,
+  type SiteState,
+  type Theme,
+  type CursorEffect,
+  type BackgroundConfig,
+  type EventFunction,
+  type Contact,
+  type TimelineMilestone,
+  type GalleryItem,
+  type HeroSectionData,
+  type ChapterSectionData,
+  type FunctionsSectionData,
+  type TimelineSectionData,
+  type GallerySectionData,
+  type VideoSectionData,
+  type ContactsSectionData,
+  type WishesSectionData,
+  type CountdownSectionData,
+  type ProfilesSectionData,
+  type RevealAnim,
+} from "@/lib/siteStore";
+import { useServerFn } from "@tanstack/react-start";
+import { listWishes } from "@/lib/wishes.functions";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({
-    meta: [
-      { title: "Admin · Wedding" },
-      { name: "robots", content: "noindex, nofollow" },
-    ],
-  }),
+  head: () => ({ meta: [{ title: "Admin · Event Platform" }] }),
   component: AdminPage,
 });
 
-type Tab = "wedding" | "family" | "events" | "contacts" | "theme" | "data";
-
 function AdminPage() {
-  const [authed, setAuthed] = useState(isAuthed());
-  if (!authed) return <Login onOk={() => setAuthed(true)} />;
+  const [authed, setAuthed] = useState(false);
+  useEffect(() => setAuthed(isAuthed()), []);
+  if (!authed) return <Login onLogin={() => setAuthed(true)} />;
   return <Dashboard onLogout={() => { logout(); setAuthed(false); }} />;
 }
 
-function Login({ onOk }: { onOk: () => void }) {
-  const [u, setU] = useState("");
-  const [p, setP] = useState("");
+function Login({ onLogin }: { onLogin: () => void }) {
+  const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (u === "admin" && login(p)) onOk();
-    else setErr("Invalid credentials");
-  };
   return (
-    <main className="min-h-screen flex items-center justify-center bg-gradient-hero p-6">
-      <form onSubmit={submit} className="glass-gold rounded-2xl p-10 w-full max-w-md shadow-deep">
-        <p className="text-xs uppercase tracking-[0.4em] text-gold text-center">Admin</p>
-        <h1 className="font-display text-4xl text-ivory text-center mt-2 mb-8">Sign in</h1>
-        <Input label="Username" value={u} onChange={setU} />
-        <Input label="Password" type="password" value={p} onChange={setP} />
-        {err && <p className="text-destructive text-sm mt-3">{err}</p>}
-        <button className="w-full mt-6 py-3 bg-gradient-gold text-primary-foreground rounded-full font-medium hover:shadow-gold transition-all">Enter</button>
-        <p className="text-xs text-muted-foreground mt-4 text-center">Default: admin / admin123</p>
+    <main className="min-h-screen flex items-center justify-center p-6 bg-slate-950 text-slate-100">
+      <form
+        onSubmit={(e) => { e.preventDefault(); login(pw) ? onLogin() : setErr("Wrong password"); }}
+        className="w-full max-w-sm space-y-4 p-8 rounded-2xl bg-slate-900 border border-slate-800"
+      >
+        <h1 className="text-2xl font-semibold">Admin</h1>
+        <p className="text-sm text-slate-400">Default password: <code>admin123</code> (change in Settings)</p>
+        <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" className="w-full p-3 rounded-lg bg-slate-800 border border-slate-700" />
+        {err && <p className="text-sm text-red-400">{err}</p>}
+        <button className="w-full p-3 rounded-lg bg-amber-500 text-slate-950 font-medium">Sign in</button>
+        <Link to="/" className="text-xs text-slate-400 underline block text-center">← Back to site</Link>
       </form>
     </main>
   );
 }
 
+type Tab = "theme" | "sections" | "wishes" | "settings";
+
 function Dashboard({ onLogout }: { onLogout: () => void }) {
-  const [tab, setTab] = useState<Tab>("wedding");
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "wedding", label: "Wedding" },
-    { id: "family", label: "Family" },
-    { id: "events", label: "Events" },
-    { id: "contacts", label: "Contacts" },
-    { id: "theme", label: "Theme & Colors" },
-    { id: "data", label: "Data" },
-  ];
+  const site = useSite();
+  const [tab, setTab] = useState<Tab>("sections");
+
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
-      <aside className="md:w-64 md:min-h-screen border-b md:border-b-0 md:border-r border-border p-6 glass">
-        <p className="font-script text-3xl text-gradient-gold">Admin</p>
-        <p className="text-xs uppercase tracking-widest text-muted-foreground mt-1">Wedding Panel</p>
-        <nav className="mt-8 flex md:flex-col gap-1 overflow-x-auto">
-          {tabs.map((t) => (
-            <button
-              key={t.id}
-              onClick={() => setTab(t.id)}
-              className={`text-left px-4 py-2.5 rounded-lg text-sm transition-colors whitespace-nowrap ${tab === t.id ? "bg-gold/15 text-gold" : "text-muted-foreground hover:text-ivory hover:bg-secondary/50"}`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </nav>
-        <div className="mt-8 space-y-2">
-          <a href="/" target="_blank" className="block text-xs text-muted-foreground hover:text-gold">↗ View site</a>
-          <button onClick={onLogout} className="text-xs text-muted-foreground hover:text-destructive">Sign out</button>
+    <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
+      <aside className="w-full md:w-64 md:min-h-screen border-b md:border-b-0 md:border-r border-slate-800 p-4 md:p-6 space-y-1">
+        <div className="mb-6">
+          <h1 className="text-xl font-semibold">Event Studio</h1>
+          <p className="text-xs text-slate-400">{site.meta.eventName || site.meta.eventType}</p>
+        </div>
+        {([
+          ["sections", "Sections"],
+          ["theme", "Theme & Effects"],
+          ["wishes", "Wishes"],
+          ["settings", "Settings"],
+        ] as [Tab, string][]).map(([k, l]) => (
+          <button key={k} onClick={() => setTab(k)} className={`block w-full text-left px-3 py-2 rounded-lg text-sm ${tab === k ? "bg-amber-500/15 text-amber-300" : "hover:bg-slate-900"}`}>
+            {l}
+          </button>
+        ))}
+        <div className="pt-6 space-y-2">
+          <Link to="/" className="block text-xs text-slate-400 underline">View site →</Link>
+          <button onClick={onLogout} className="block text-xs text-slate-400 underline">Sign out</button>
         </div>
       </aside>
-      <main className="flex-1 p-6 md:p-12 max-w-5xl">
-        {tab === "wedding" && <WeddingTab />}
-        {tab === "family" && <FamilyTab />}
-        {tab === "events" && <EventsTab />}
-        {tab === "contacts" && <ContactsTab />}
-        {tab === "theme" && <ThemeTab />}
-        {tab === "data" && <DataTab />}
+      <main className="flex-1 p-6 md:p-10 max-w-5xl">
+        {tab === "sections" && <SectionsTab site={site} />}
+        {tab === "theme" && <ThemeTab site={site} />}
+        {tab === "wishes" && <WishesTab />}
+        {tab === "settings" && <SettingsTab site={site} />}
       </main>
     </div>
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <section className="mb-10">
-      <h2 className="font-display text-3xl text-ivory mb-6">{title}</h2>
-      <div className="glass-gold rounded-2xl p-6 sm:p-8 space-y-5">{children}</div>
-    </section>
-  );
-}
+// ============ Sections Tab ============
 
-function Input({ label, value, onChange, type = "text", placeholder }: { label: string; value: string; onChange: (v: string) => void; type?: string; placeholder?: string }) {
-  return (
-    <label className="block">
-      <span className="text-xs uppercase tracking-widest text-gold">{label}</span>
-      <input
-        type={type}
-        value={value}
-        placeholder={placeholder}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full bg-transparent border-b border-border py-2 px-1 text-ivory focus:outline-none focus:border-gold transition-colors"
-      />
-    </label>
-  );
-}
+function SectionsTab({ site }: { site: SiteState }) {
+  const [selectedId, setSelectedId] = useState<string | null>(site.sections[0]?.id ?? null);
+  const selected = site.sections.find((s) => s.id === selectedId);
 
-function Textarea({ label, value, onChange }: { label: string; value: string; onChange: (v: string) => void }) {
-  return (
-    <label className="block">
-      <span className="text-xs uppercase tracking-widest text-gold">{label}</span>
-      <textarea
-        value={value}
-        rows={3}
-        onChange={(e) => onChange(e.target.value)}
-        className="mt-2 w-full bg-transparent border border-border rounded-lg p-3 text-ivory focus:outline-none focus:border-gold transition-colors resize-none"
-      />
-    </label>
-  );
-}
-
-function ImageField({ label, value, onChange }: { label: string; value?: string; onChange: (v: string | undefined) => void }) {
-  const onFile = async (file: File | undefined) => {
-    if (!file) return;
-    if (file.size > 1_500_000) {
-      alert("Image too large. Use under 1.5 MB or paste a URL.");
-      return;
+  const add = (kind: Section["kind"]) => {
+    const base = { id: uid(), kind, enabled: true, anim: "fade-up" as RevealAnim };
+    let next: Section;
+    switch (kind) {
+      case "hero": next = { ...base, kind: "hero", mode: "couple", eyebrow: site.meta.eventType, tagline: "", bride: { name: "Bride" }, groom: { name: "Groom" }, separator: "&" } as HeroSectionData; break;
+      case "countdown": next = { ...base, kind: "countdown", date: new Date(Date.now() + 86400000 * 30).toISOString(), label: "Until the day" } as CountdownSectionData; break;
+      case "chapter": next = { ...base, kind: "chapter", title: "New Chapter", subtitle: "", body: "", layout: "center" } as ChapterSectionData; break;
+      case "profiles": next = { ...base, kind: "profiles", title: "About", profiles: [] } as ProfilesSectionData; break;
+      case "functions": next = { ...base, kind: "functions", title: "Events", functions: [] } as FunctionsSectionData; break;
+      case "timeline": next = { ...base, kind: "timeline", title: "Journey", layout: "vertical", milestones: [] } as TimelineSectionData; break;
+      case "gallery": next = { ...base, kind: "gallery", title: "Gallery", layout: "masonry", items: [] } as GallerySectionData; break;
+      case "video": next = { ...base, kind: "video", title: "Watch", source: "youtube", url: "", display: "fullscreen", muted: true } as VideoSectionData; break;
+      case "wishes": next = { ...base, kind: "wishes", title: "Leave a Wish", prompt: "Your words become part of our forever." } as WishesSectionData; break;
+      case "contacts": next = { ...base, kind: "contacts", title: "Contact", contacts: [] } as ContactsSectionData; break;
     }
-    const reader = new FileReader();
-    reader.onload = () => onChange(String(reader.result));
-    reader.readAsDataURL(file);
+    setState((s) => ({ ...s, sections: [...s.sections, next] }));
+    setSelectedId(next.id);
   };
+
+  const update = (id: string, patch: Partial<Section>) =>
+    setState((s) => ({ ...s, sections: s.sections.map((x) => x.id === id ? ({ ...x, ...patch } as Section) : x) }));
+  const remove = (id: string) => setState((s) => ({ ...s, sections: s.sections.filter((x) => x.id !== id) }));
+  const move = (id: string, dir: -1 | 1) => setState((s) => {
+    const i = s.sections.findIndex((x) => x.id === id); if (i < 0) return s;
+    const j = i + dir; if (j < 0 || j >= s.sections.length) return s;
+    const arr = [...s.sections]; const [it] = arr.splice(i, 1); arr.splice(j, 0, it);
+    return { ...s, sections: arr };
+  });
+
   return (
-    <div>
-      <span className="text-xs uppercase tracking-widest text-gold">{label}</span>
-      <div className="mt-2 flex flex-col sm:flex-row gap-3 items-start">
-        {value && <img src={value} alt="" className="h-20 w-20 object-cover rounded-lg border border-border" />}
-        <div className="flex-1 space-y-2 w-full">
-          <input
-            type="text"
-            value={value || ""}
-            onChange={(e) => onChange(e.target.value || undefined)}
-            placeholder="Paste image URL"
-            className="w-full bg-transparent border-b border-border py-2 px-1 text-ivory focus:outline-none focus:border-gold text-sm"
-          />
-          <div className="flex gap-2">
-            <label className="text-xs px-3 py-1.5 rounded-full glass cursor-pointer hover:bg-gold/10">
-              Upload file
-              <input type="file" accept="image/*" className="hidden" onChange={(e) => onFile(e.target.files?.[0])} />
-            </label>
-            {value && <button onClick={() => onChange(undefined)} className="text-xs px-3 py-1.5 rounded-full glass hover:bg-destructive/20">Remove</button>}
-          </div>
+    <div className="grid md:grid-cols-[280px_1fr] gap-6">
+      <div className="space-y-3">
+        <h2 className="text-lg font-semibold">Sections</h2>
+        <div className="space-y-1">
+          {site.sections.map((s) => (
+            <button key={s.id} onClick={() => setSelectedId(s.id)} className={`w-full text-left p-3 rounded-lg text-sm flex items-center justify-between ${selectedId === s.id ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800"}`}>
+              <span className="truncate">{s.kind} {!s.enabled && "· off"}</span>
+              <span className="opacity-50 text-xs">{s.title ?? ""}</span>
+            </button>
+          ))}
         </div>
+        <details className="bg-slate-900 rounded-lg p-3">
+          <summary className="cursor-pointer text-sm">+ Add section</summary>
+          <div className="grid grid-cols-2 gap-2 mt-3">
+            {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","wishes","contacts"] as Section["kind"][]).map(k => (
+              <button key={k} onClick={() => add(k)} className="p-2 text-xs rounded bg-slate-800 hover:bg-slate-700 capitalize">{k}</button>
+            ))}
+          </div>
+        </details>
+      </div>
+      <div>
+        {selected ? (
+          <SectionEditor
+            section={selected}
+            onChange={(patch) => update(selected.id, patch)}
+            onDelete={() => { remove(selected.id); setSelectedId(null); }}
+            onMoveUp={() => move(selected.id, -1)}
+            onMoveDown={() => move(selected.id, 1)}
+          />
+        ) : (
+          <div className="text-slate-400 text-sm">Select a section, or add a new one.</div>
+        )}
       </div>
     </div>
   );
 }
 
-function WeddingTab() {
-  const s = useSite();
-  const upd = (k: keyof typeof s.wedding) => (v: string) => setState((p) => ({ ...p, wedding: { ...p.wedding, [k]: v } }));
-  const updImg = (k: "heroImage" | "rukhsatiImage") => (v: string | undefined) => setState((p) => ({ ...p, wedding: { ...p.wedding, [k]: v } }));
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <Section title="Wedding Information">
-      <div className="grid sm:grid-cols-2 gap-5">
-        <Input label="Bride Name" value={s.wedding.bride} onChange={upd("bride")} />
-        <Input label="Groom Name" value={s.wedding.groom} onChange={upd("groom")} />
-      </div>
-      <Input label="Tagline / Hero Heading" value={s.wedding.tagline} onChange={upd("tagline")} />
-      <div className="grid sm:grid-cols-2 gap-5">
-        <Input label="Date (ISO, e.g. 2026-08-14T18:00:00)" value={s.wedding.date} onChange={upd("date")} />
-        <Input label="Date Label (shown on site)" value={s.wedding.dateLabel} onChange={upd("dateLabel")} />
-      </div>
-      <Textarea label="Story / Subheading" value={s.wedding.story} onChange={upd("story")} />
-      <ImageField label="Hero Background Image" value={s.wedding.heroImage} onChange={updImg("heroImage")} />
-      <ImageField label="Rukhsati Section Image" value={s.wedding.rukhsatiImage} onChange={updImg("rukhsatiImage")} />
-    </Section>
+    <label className="block space-y-1">
+      <span className="text-xs uppercase tracking-wider text-slate-400">{label}</span>
+      {children}
+    </label>
   );
 }
+const inputCls = "w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-sm";
 
-function FamilyTab() {
-  const s = useSite();
-  const upd = (k: keyof typeof s.family) => (v: string) => setState((p) => ({ ...p, family: { ...p.family, [k]: v } }));
+function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { section: Section; onChange: (p: Partial<Section>) => void; onDelete: () => void; onMoveUp: () => void; onMoveDown: () => void; }) {
   return (
-    <Section title="Family Information">
-      <div className="grid sm:grid-cols-2 gap-5">
-        <Input label="Bride's Father" value={s.family.brideFather} onChange={upd("brideFather")} />
-        <Input label="Bride's Mother" value={s.family.brideMother} onChange={upd("brideMother")} />
-        <Input label="Groom's Father" value={s.family.groomFather} onChange={upd("groomFather")} />
-        <Input label="Groom's Mother" value={s.family.groomMother} onChange={upd("groomMother")} />
-      </div>
-      <Textarea label="Blessing Message" value={s.family.blessing} onChange={upd("blessing")} />
-    </Section>
-  );
-}
-
-function EventsTab() {
-  const s = useSite();
-  const updateEvent = (idx: number, patch: Partial<EventItem>) =>
-    setState((p) => ({ ...p, events: p.events.map((e, i) => (i === idx ? { ...e, ...patch } : e)) }));
-  const remove = (idx: number) => setState((p) => ({ ...p, events: p.events.filter((_, i) => i !== idx) }));
-  const add = () =>
-    setState((p) => ({
-      ...p,
-      events: [
-        ...p.events,
-        {
-          id: `event-${Date.now()}`,
-          name: "New Event",
-          date: "",
-          day: "",
-          time: "",
-          venue: "",
-          address: "",
-          mapsUrl: "",
-          mapsEmbedUrl: "",
-          description: "",
-          theme: "",
-          activities: [],
-        },
-      ],
-    }));
-  const move = (idx: number, dir: -1 | 1) =>
-    setState((p) => {
-      const events = [...p.events];
-      const j = idx + dir;
-      if (j < 0 || j >= events.length) return p;
-      [events[idx], events[j]] = [events[j], events[idx]];
-      return { ...p, events };
-    });
-
-  return (
-    <>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-3xl text-ivory">Events</h2>
-        <button onClick={add} className="px-5 py-2 rounded-full bg-gradient-gold text-primary-foreground text-sm font-medium">+ Add Event</button>
-      </div>
-      <div className="space-y-6">
-        {s.events.map((ev, i) => (
-          <div key={ev.id} className="glass-gold rounded-2xl p-6 sm:p-8 space-y-5">
-            <div className="flex items-start justify-between gap-4">
-              <Input label="Event Name" value={ev.name} onChange={(v) => updateEvent(i, { name: v })} />
-              <div className="flex gap-1 pt-6 shrink-0">
-                <button onClick={() => move(i, -1)} className="text-xs px-2 py-1 rounded glass hover:bg-gold/10" title="Move up">↑</button>
-                <button onClick={() => move(i, 1)} className="text-xs px-2 py-1 rounded glass hover:bg-gold/10" title="Move down">↓</button>
-                <button onClick={() => remove(i)} className="text-xs px-2 py-1 rounded glass hover:bg-destructive/20" title="Delete">✕</button>
-              </div>
-            </div>
-            <div className="grid sm:grid-cols-3 gap-5">
-              <Input label="Date" value={ev.date} onChange={(v) => updateEvent(i, { date: v })} />
-              <Input label="Day" value={ev.day} onChange={(v) => updateEvent(i, { day: v })} />
-              <Input label="Time" value={ev.time} onChange={(v) => updateEvent(i, { time: v })} />
-            </div>
-            <Input label="Venue" value={ev.venue} onChange={(v) => updateEvent(i, { venue: v })} />
-            <Input label="Address" value={ev.address} onChange={(v) => updateEvent(i, { address: v })} />
-            <Input label="Google Maps URL (button link)" value={ev.mapsUrl} onChange={(v) => updateEvent(i, { mapsUrl: v })} placeholder="https://maps.google.com/..." />
-            <Textarea label="Google Maps Embed URL (iframe src — Maps → Share → Embed a map → copy the src)" value={ev.mapsEmbedUrl || ""} onChange={(v) => updateEvent(i, { mapsEmbedUrl: v })} />
-            <Textarea label="Description" value={ev.description} onChange={(v) => updateEvent(i, { description: v })} />
-            <Input label="Theme Colors / Mood" value={ev.theme} onChange={(v) => updateEvent(i, { theme: v })} />
-            <Input label="Activities (comma separated)" value={ev.activities.join(", ")} onChange={(v) => updateEvent(i, { activities: v.split(",").map((s) => s.trim()).filter(Boolean) })} />
-            <ImageField label="Event Image" value={ev.image} onChange={(v) => updateEvent(i, { image: v })} />
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function ContactsTab() {
-  const s = useSite();
-  const update = (idx: number, patch: Partial<Contact>) =>
-    setState((p) => ({ ...p, contacts: p.contacts.map((c, i) => (i === idx ? { ...c, ...patch } : c)) }));
-  const remove = (idx: number) => setState((p) => ({ ...p, contacts: p.contacts.filter((_, i) => i !== idx) }));
-  const add = () => setState((p) => ({ ...p, contacts: [...p.contacts, { label: "New Contact", name: "", phone: "", whatsapp: "", email: "" }] }));
-  return (
-    <>
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="font-display text-3xl text-ivory">Contacts</h2>
-        <button onClick={add} className="px-5 py-2 rounded-full bg-gradient-gold text-primary-foreground text-sm font-medium">+ Add Contact</button>
-      </div>
-      <div className="space-y-6">
-        {s.contacts.map((c, i) => (
-          <div key={i} className="glass-gold rounded-2xl p-6 sm:p-8 space-y-5">
-            <div className="flex justify-between gap-4">
-              <Input label="Label (e.g. Bride's Side)" value={c.label} onChange={(v) => update(i, { label: v })} />
-              <button onClick={() => remove(i)} className="text-xs px-3 py-1.5 rounded-full glass hover:bg-destructive/20 self-end">Remove</button>
-            </div>
-            <Input label="Name" value={c.name} onChange={(v) => update(i, { name: v })} />
-            <div className="grid sm:grid-cols-3 gap-5">
-              <Input label="Phone" value={c.phone} onChange={(v) => update(i, { phone: v })} />
-              <Input label="WhatsApp" value={c.whatsapp} onChange={(v) => update(i, { whatsapp: v })} />
-              <Input label="Email" value={c.email || ""} onChange={(v) => update(i, { email: v })} />
-            </div>
-          </div>
-        ))}
-      </div>
-    </>
-  );
-}
-
-function ThemeTab() {
-  const s = useSite();
-  const upd = (k: keyof typeof s.theme) => (v: string) => setState((p) => ({ ...p, theme: { ...p.theme, [k]: v } }));
-  const swatches: Array<{ key: keyof typeof s.theme; label: string; hint: string }> = [
-    { key: "background", label: "Background", hint: "Page background" },
-    { key: "gold", label: "Gold (Primary Accent)", hint: "Headings, buttons, lines" },
-    { key: "goldSoft", label: "Soft Gold", hint: "Subtle highlights" },
-    { key: "ivory", label: "Ivory (Foreground)", hint: "Main text color" },
-    { key: "marigold", label: "Marigold", hint: "Mehndi section accents" },
-    { key: "barat", label: "Barat Red", hint: "Barat section accents" },
-  ];
-  return (
-    <Section title="Theme & Colors">
-      <p className="text-sm text-muted-foreground -mt-2">
-        Use any CSS color (hex like <code className="text-gold">#d4af37</code>, or <code className="text-gold">oklch(0.82 0.13 85)</code>). Changes apply live.
-      </p>
-      <div className="grid sm:grid-cols-2 gap-5">
-        {swatches.map((sw) => (
-          <div key={sw.key} className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg border border-border shrink-0" style={{ background: s.theme[sw.key] }} />
-              <div className="flex-1">
-                <Input label={sw.label} value={s.theme[sw.key]} onChange={upd(sw.key)} />
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground pl-13">{sw.hint}</p>
-          </div>
-        ))}
-      </div>
-    </Section>
-  );
-}
-
-function DataTab() {
-  const exportData = () => {
-    const blob = new Blob([localStorage.getItem("wedding-site-state-v1") || "{}"], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "wedding-site-backup.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-  const importData = (file: File | undefined) => {
-    if (!file) return;
-    const r = new FileReader();
-    r.onload = () => {
-      try {
-        const parsed = JSON.parse(String(r.result));
-        setState(() => parsed);
-        alert("Imported.");
-      } catch {
-        alert("Invalid file.");
-      }
-    };
-    r.readAsText(file);
-  };
-  const rsvps: any[] = JSON.parse(typeof window !== "undefined" ? localStorage.getItem("wedding-rsvps") || "[]" : "[]");
-  const wishes: any[] = JSON.parse(typeof window !== "undefined" ? localStorage.getItem("wedding-wishes") || "[]" : "[]");
-  const exportCSV = () => {
-    const rows = [["Name", "Phone", "Attending", "Guests", "Event", "Note", "At"], ...rsvps.map((r) => [r.name, r.phone, r.attending, r.guests, r.event, r.note, r.at])];
-    const csv = rows.map((r) => r.map((c) => `"${String(c ?? "").replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csv], { type: "text/csv" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url; a.download = "rsvps.csv"; a.click();
-    URL.revokeObjectURL(url);
-  };
-  return (
-    <>
-      <Section title="RSVPs & Wishes">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <div className="glass rounded-xl p-5">
-            <p className="text-xs uppercase tracking-widest text-gold">RSVPs</p>
-            <p className="font-display text-4xl text-ivory mt-2">{rsvps.length}</p>
-            <button onClick={exportCSV} className="mt-3 text-xs px-3 py-1.5 rounded-full glass hover:bg-gold/10">Export CSV</button>
-          </div>
-          <div className="glass rounded-xl p-5">
-            <p className="text-xs uppercase tracking-widest text-gold">Wishes</p>
-            <p className="font-display text-4xl text-ivory mt-2">{wishes.length}</p>
-          </div>
-        </div>
-      </Section>
-      <Section title="Backup & Reset">
-        <div className="flex flex-wrap gap-3">
-          <button onClick={exportData} className="px-5 py-2 rounded-full glass text-sm hover:bg-gold/10">Export site JSON</button>
-          <label className="px-5 py-2 rounded-full glass text-sm hover:bg-gold/10 cursor-pointer">
-            Import JSON
-            <input type="file" accept="application/json" className="hidden" onChange={(e) => importData(e.target.files?.[0])} />
+    <div className="space-y-5">
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <h3 className="text-lg font-semibold capitalize">{section.kind}</h3>
+        <div className="flex gap-2 text-xs">
+          <button onClick={onMoveUp} className="px-3 py-1.5 rounded bg-slate-800">↑</button>
+          <button onClick={onMoveDown} className="px-3 py-1.5 rounded bg-slate-800">↓</button>
+          <label className="px-3 py-1.5 rounded bg-slate-800 flex items-center gap-2 cursor-pointer">
+            <input type="checkbox" checked={section.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} /> Enabled
           </label>
-          <button
-            onClick={() => { if (confirm("Reset all site content to defaults?")) resetState(); }}
-            className="px-5 py-2 rounded-full glass text-sm hover:bg-destructive/20"
-          >
-            Reset to defaults
-          </button>
+          <button onClick={onDelete} className="px-3 py-1.5 rounded bg-red-600/80">Delete</button>
         </div>
-      </Section>
-    </>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        <Field label="Title (optional)"><input className={inputCls} value={(section as { title?: string }).title ?? ""} onChange={(e) => onChange({ title: e.target.value } as Partial<Section>)} /></Field>
+        <Field label="Reveal animation">
+          <select className={inputCls} value={section.anim ?? "fade-up"} onChange={(e) => onChange({ anim: e.target.value as RevealAnim })}>
+            {(["fade-up","fade-in","fade-down","fade-left","fade-right","zoom-in","zoom-out","blur","letter","mask","cinematic"] as RevealAnim[]).map(a => <option key={a}>{a}</option>)}
+          </select>
+        </Field>
+      </div>
+      <BackgroundEditor bg={section.background} onChange={(bg) => onChange({ background: bg } as Partial<Section>)} />
+
+      {section.kind === "hero" && <HeroEditor section={section} onChange={onChange as (p: Partial<HeroSectionData>) => void} />}
+      {section.kind === "countdown" && <CountdownEditor section={section} onChange={onChange as (p: Partial<CountdownSectionData>) => void} />}
+      {section.kind === "chapter" && <ChapterEditor section={section} onChange={onChange as (p: Partial<ChapterSectionData>) => void} />}
+      {section.kind === "profiles" && <ProfilesEditor section={section} onChange={onChange as (p: Partial<ProfilesSectionData>) => void} />}
+      {section.kind === "functions" && <FunctionsEditor section={section} onChange={onChange as (p: Partial<FunctionsSectionData>) => void} />}
+      {section.kind === "timeline" && <TimelineEditor section={section} onChange={onChange as (p: Partial<TimelineSectionData>) => void} />}
+      {section.kind === "gallery" && <GalleryEditor section={section} onChange={onChange as (p: Partial<GallerySectionData>) => void} />}
+      {section.kind === "video" && <VideoEditor section={section} onChange={onChange as (p: Partial<VideoSectionData>) => void} />}
+      {section.kind === "wishes" && <Field label="Prompt"><input className={inputCls} value={section.prompt ?? ""} onChange={(e) => onChange({ prompt: e.target.value })} /></Field>}
+      {section.kind === "contacts" && <ContactsEditor section={section} onChange={onChange as (p: Partial<ContactsSectionData>) => void} />}
+    </div>
+  );
+}
+
+async function fileToBase64(file: File): Promise<string> {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.onerror = rej; r.readAsDataURL(file); });
+}
+function ImageInput({ value, onChange }: { value?: string; onChange: (v: string) => void }) {
+  return (
+    <div className="flex gap-2 items-start">
+      <input className={inputCls} placeholder="Image URL" value={value ?? ""} onChange={(e) => onChange(e.target.value)} />
+      <label className="px-3 py-2.5 rounded-lg bg-slate-800 text-xs cursor-pointer whitespace-nowrap">
+        Upload
+        <input type="file" accept="image/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) onChange(await fileToBase64(f)); }} />
+      </label>
+      {value && <img src={value} alt="" className="w-12 h-12 rounded object-cover" />}
+    </div>
+  );
+}
+
+function BackgroundEditor({ bg, onChange }: { bg?: BackgroundConfig; onChange: (b?: BackgroundConfig) => void }) {
+  const t = bg?.type ?? "inherit";
+  return (
+    <details className="bg-slate-900 rounded-lg p-4">
+      <summary className="cursor-pointer text-sm font-medium">Background override</summary>
+      <div className="mt-3 space-y-3">
+        <select className={inputCls} value={t} onChange={(e) => {
+          const v = e.target.value;
+          if (v === "inherit") onChange(undefined);
+          else if (v === "color") onChange({ type: "color", color: "#0b1020" });
+          else if (v === "gradient") onChange({ type: "gradient", from: "#1a1a2e", to: "#16213e", angle: 135, animated: true });
+          else if (v === "image") onChange({ type: "image", url: "", overlay: 0.45 });
+          else if (v === "video") onChange({ type: "video", url: "", overlay: 0.5 });
+          else if (v === "animated") onChange({ type: "animated", variant: "particles", color: "rgba(255,210,120,0.6)" });
+        }}>
+          <option value="inherit">Inherit theme default</option>
+          <option value="color">Solid color</option>
+          <option value="gradient">Gradient</option>
+          <option value="image">Image</option>
+          <option value="video">Video</option>
+          <option value="animated">Animated</option>
+        </select>
+        {bg?.type === "color" && <input className={inputCls} value={bg.color} onChange={(e) => onChange({ ...bg, color: e.target.value })} />}
+        {bg?.type === "gradient" && (
+          <div className="grid grid-cols-2 gap-2">
+            <input className={inputCls} value={bg.from} onChange={(e) => onChange({ ...bg, from: e.target.value })} placeholder="From" />
+            <input className={inputCls} value={bg.to} onChange={(e) => onChange({ ...bg, to: e.target.value })} placeholder="To" />
+            <label className="text-xs flex items-center gap-2 col-span-2"><input type="checkbox" checked={!!bg.animated} onChange={(e) => onChange({ ...bg, animated: e.target.checked })} /> Animated</label>
+          </div>
+        )}
+        {bg?.type === "image" && <ImageInput value={bg.url} onChange={(v) => onChange({ ...bg, url: v })} />}
+        {bg?.type === "video" && <input className={inputCls} placeholder="Video URL (mp4)" value={bg.url} onChange={(e) => onChange({ ...bg, url: e.target.value })} />}
+        {bg?.type === "animated" && (
+          <select className={inputCls} value={bg.variant} onChange={(e) => onChange({ ...bg, variant: e.target.value as "particles" })}>
+            {["particles","stars","aurora","rays","fireflies","petals"].map(v => <option key={v}>{v}</option>)}
+          </select>
+        )}
+      </div>
+    </details>
+  );
+}
+
+function HeroEditor({ section, onChange }: { section: HeroSectionData; onChange: (p: Partial<HeroSectionData>) => void }) {
+  return (
+    <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Mode">
+          <select className={inputCls} value={section.mode} onChange={(e) => onChange({ mode: e.target.value as "single" | "couple" })}>
+            <option value="couple">Couple (two people)</option>
+            <option value="single">Single person</option>
+          </select>
+        </Field>
+        <Field label="Eyebrow"><input className={inputCls} value={section.eyebrow ?? ""} onChange={(e) => onChange({ eyebrow: e.target.value })} /></Field>
+      </div>
+      <Field label="Tagline"><input className={inputCls} value={section.tagline ?? ""} onChange={(e) => onChange({ tagline: e.target.value })} /></Field>
+      <Field label="Story"><textarea className={inputCls} rows={2} value={section.story ?? ""} onChange={(e) => onChange({ story: e.target.value })} /></Field>
+      {section.mode === "couple" ? (
+        <>
+          <Field label="Separator"><input className={inputCls} value={section.separator ?? "&"} onChange={(e) => onChange({ separator: e.target.value })} /></Field>
+          <div className="grid md:grid-cols-2 gap-4">
+            <PersonEditor label="Bride / Partner 1" p={section.bride ?? { name: "" }} onChange={(p) => onChange({ bride: p })} />
+            <PersonEditor label="Groom / Partner 2" p={section.groom ?? { name: "" }} onChange={(p) => onChange({ groom: p })} />
+          </div>
+        </>
+      ) : (
+        <PersonEditor label="Person" p={section.person ?? { name: "" }} onChange={(p) => onChange({ person: p })} />
+      )}
+    </div>
+  );
+}
+
+function PersonEditor({ label, p, onChange }: { label: string; p: { name: string; photo?: string; relation?: string; description?: string; personality?: string; remark?: string }; onChange: (p: typeof p) => void }) {
+  return (
+    <div className="space-y-2 p-3 rounded-lg bg-slate-950/50 border border-slate-800">
+      <p className="text-xs uppercase tracking-wider text-amber-400">{label}</p>
+      <input className={inputCls} placeholder="Name" value={p.name} onChange={(e) => onChange({ ...p, name: e.target.value })} />
+      <input className={inputCls} placeholder="Relation (e.g. Daughter of...)" value={p.relation ?? ""} onChange={(e) => onChange({ ...p, relation: e.target.value })} />
+      <ImageInput value={p.photo} onChange={(v) => onChange({ ...p, photo: v })} />
+      <textarea className={inputCls} rows={2} placeholder="Description" value={p.description ?? ""} onChange={(e) => onChange({ ...p, description: e.target.value })} />
+      <input className={inputCls} placeholder="Personality" value={p.personality ?? ""} onChange={(e) => onChange({ ...p, personality: e.target.value })} />
+      <input className={inputCls} placeholder="Remark / quote" value={p.remark ?? ""} onChange={(e) => onChange({ ...p, remark: e.target.value })} />
+    </div>
+  );
+}
+
+function CountdownEditor({ section, onChange }: { section: CountdownSectionData; onChange: (p: Partial<CountdownSectionData>) => void }) {
+  const local = section.date ? new Date(section.date).toISOString().slice(0,16) : "";
+  return (
+    <div className="grid grid-cols-2 gap-3">
+      <Field label="Date"><input type="datetime-local" className={inputCls} value={local} onChange={(e) => onChange({ date: new Date(e.target.value).toISOString() })} /></Field>
+      <Field label="Label"><input className={inputCls} value={section.label ?? ""} onChange={(e) => onChange({ label: e.target.value })} /></Field>
+    </div>
+  );
+}
+
+function ChapterEditor({ section, onChange }: { section: ChapterSectionData; onChange: (p: Partial<ChapterSectionData>) => void }) {
+  return (
+    <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
+      <Field label="Subtitle"><input className={inputCls} value={section.subtitle ?? ""} onChange={(e) => onChange({ subtitle: e.target.value })} /></Field>
+      <Field label="Body"><textarea className={inputCls} rows={4} value={section.body ?? ""} onChange={(e) => onChange({ body: e.target.value })} /></Field>
+      <Field label="Layout">
+        <select className={inputCls} value={section.layout ?? "center"} onChange={(e) => onChange({ layout: e.target.value as "left" })}>
+          <option value="center">Center</option><option value="left">Image left</option><option value="right">Image right</option><option value="fullbleed">Fullbleed</option>
+        </select>
+      </Field>
+      <Field label="Image"><ImageInput value={section.image} onChange={(v) => onChange({ image: v })} /></Field>
+    </div>
+  );
+}
+
+function ProfilesEditor({ section, onChange }: { section: ProfilesSectionData; onChange: (p: Partial<ProfilesSectionData>) => void }) {
+  const set = (i: number, p: typeof section.profiles[number]) => onChange({ profiles: section.profiles.map((x, j) => i === j ? p : x) });
+  return (
+    <div className="space-y-3">
+      {section.profiles.map((p, i) => (
+        <div key={i} className="flex gap-3 items-start">
+          <PersonEditor label={`Profile ${i+1}`} p={p} onChange={(np) => set(i, np)} />
+          <button onClick={() => onChange({ profiles: section.profiles.filter((_, j) => j !== i) })} className="px-3 py-2 rounded bg-red-600/70 text-xs">×</button>
+        </div>
+      ))}
+      <button onClick={() => onChange({ profiles: [...section.profiles, { name: "New profile" }] })} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add profile</button>
+    </div>
+  );
+}
+
+function FunctionsEditor({ section, onChange }: { section: FunctionsSectionData; onChange: (p: Partial<FunctionsSectionData>) => void }) {
+  const upd = (i: number, f: EventFunction) => onChange({ functions: section.functions.map((x, j) => i === j ? f : x) });
+  return (
+    <div className="space-y-3">
+      {section.functions.map((f, i) => (
+        <div key={f.id} className="p-4 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+          <div className="flex justify-between items-center"><strong>{f.name || "Function"}</strong>
+            <button onClick={() => onChange({ functions: section.functions.filter((_, j) => j !== i) })} className="text-red-400 text-xs">Remove</button>
+          </div>
+          <input className={inputCls} placeholder="Name" value={f.name} onChange={(e) => upd(i, { ...f, name: e.target.value })} />
+          <div className="grid grid-cols-2 gap-2">
+            <input className={inputCls} placeholder="Date" value={f.date} onChange={(e) => upd(i, { ...f, date: e.target.value })} />
+            <input className={inputCls} placeholder="Time" value={f.time} onChange={(e) => upd(i, { ...f, time: e.target.value })} />
+            <input className={inputCls} placeholder="Venue" value={f.venue} onChange={(e) => upd(i, { ...f, venue: e.target.value })} />
+            <input className={inputCls} placeholder="Dress code" value={f.dressCode ?? ""} onChange={(e) => upd(i, { ...f, dressCode: e.target.value })} />
+          </div>
+          <input className={inputCls} placeholder="Address" value={f.address} onChange={(e) => upd(i, { ...f, address: e.target.value })} />
+          <input className={inputCls} placeholder="Theme" value={f.theme ?? ""} onChange={(e) => upd(i, { ...f, theme: e.target.value })} />
+          <textarea className={inputCls} rows={2} placeholder="Description" value={f.description ?? ""} onChange={(e) => upd(i, { ...f, description: e.target.value })} />
+          <ImageInput value={f.cover} onChange={(v) => upd(i, { ...f, cover: v })} />
+          <input className={inputCls} placeholder="Google Maps link" value={f.mapsUrl ?? ""} onChange={(e) => upd(i, { ...f, mapsUrl: e.target.value })} />
+          <input className={inputCls} placeholder="Google Maps embed URL (iframe src)" value={f.mapsEmbedUrl ?? ""} onChange={(e) => upd(i, { ...f, mapsEmbedUrl: e.target.value })} />
+        </div>
+      ))}
+      <button onClick={() => onChange({ functions: [...section.functions, { id: uid(), name: "New function", date: "", time: "", venue: "", address: "" }] })} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add function</button>
+    </div>
+  );
+}
+
+function TimelineEditor({ section, onChange }: { section: TimelineSectionData; onChange: (p: Partial<TimelineSectionData>) => void }) {
+  const upd = (i: number, m: TimelineMilestone) => onChange({ milestones: section.milestones.map((x, j) => i === j ? m : x) });
+  return (
+    <div className="space-y-3">
+      {section.milestones.map((m, i) => (
+        <div key={m.id} className="p-4 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+          <div className="flex justify-between"><strong>{m.title || "Milestone"}</strong>
+            <button onClick={() => onChange({ milestones: section.milestones.filter((_, j) => j !== i) })} className="text-red-400 text-xs">Remove</button>
+          </div>
+          <input className={inputCls} placeholder="Title" value={m.title} onChange={(e) => upd(i, { ...m, title: e.target.value })} />
+          <input className={inputCls} placeholder="Date" value={m.date} onChange={(e) => upd(i, { ...m, date: e.target.value })} />
+          <textarea className={inputCls} rows={2} placeholder="Description" value={m.description ?? ""} onChange={(e) => upd(i, { ...m, description: e.target.value })} />
+          <ImageInput value={m.image} onChange={(v) => upd(i, { ...m, image: v })} />
+        </div>
+      ))}
+      <button onClick={() => onChange({ milestones: [...section.milestones, { id: uid(), title: "New milestone", date: "" }] })} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add milestone</button>
+    </div>
+  );
+}
+
+function GalleryEditor({ section, onChange }: { section: GallerySectionData; onChange: (p: Partial<GallerySectionData>) => void }) {
+  return (
+    <div className="space-y-3">
+      <Field label="Layout">
+        <select className={inputCls} value={section.layout} onChange={(e) => onChange({ layout: e.target.value as "masonry" })}>
+          {["masonry","grid","carousel","filmstrip"].map(l => <option key={l}>{l}</option>)}
+        </select>
+      </Field>
+      <div className="grid grid-cols-3 gap-3">
+        {section.items.map((it, i) => (
+          <div key={it.id} className="relative">
+            {it.kind === "image" ? <img src={it.src} className="w-full h-32 object-cover rounded-lg" /> : <video src={it.src} className="w-full h-32 object-cover rounded-lg" />}
+            <button onClick={() => onChange({ items: section.items.filter((_, j) => j !== i) })} className="absolute top-1 right-1 px-2 py-0.5 rounded bg-red-600 text-xs">×</button>
+          </div>
+        ))}
+      </div>
+      <label className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm cursor-pointer inline-block">+ Upload images
+        <input type="file" multiple accept="image/*,video/*" className="hidden" onChange={async (e) => {
+          const files = Array.from(e.target.files ?? []);
+          const items: GalleryItem[] = await Promise.all(files.map(async f => ({ id: uid(), src: await fileToBase64(f), kind: f.type.startsWith("video") ? "video" : "image" })));
+          onChange({ items: [...section.items, ...items] });
+        }} />
+      </label>
+    </div>
+  );
+}
+
+function VideoEditor({ section, onChange }: { section: VideoSectionData; onChange: (p: Partial<VideoSectionData>) => void }) {
+  return (
+    <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Source">
+          <select className={inputCls} value={section.source} onChange={(e) => onChange({ source: e.target.value as "youtube" })}>
+            <option value="youtube">YouTube</option><option value="vimeo">Vimeo</option><option value="mp4">MP4 URL</option>
+          </select>
+        </Field>
+        <Field label="Display">
+          <select className={inputCls} value={section.display} onChange={(e) => onChange({ display: e.target.value as "fullscreen" })}>
+            <option value="fullscreen">Fullscreen</option><option value="card">Card</option><option value="background">Background</option>
+          </select>
+        </Field>
+      </div>
+      <Field label="URL"><input className={inputCls} value={section.url} onChange={(e) => onChange({ url: e.target.value })} /></Field>
+      <Field label="Caption"><input className={inputCls} value={section.caption ?? ""} onChange={(e) => onChange({ caption: e.target.value })} /></Field>
+      <div className="flex gap-4 text-xs">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.autoplay} onChange={(e) => onChange({ autoplay: e.target.checked })} /> Autoplay</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.loop} onChange={(e) => onChange({ loop: e.target.checked })} /> Loop</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.muted} onChange={(e) => onChange({ muted: e.target.checked })} /> Muted</label>
+      </div>
+    </div>
+  );
+}
+
+function ContactsEditor({ section, onChange }: { section: ContactsSectionData; onChange: (p: Partial<ContactsSectionData>) => void }) {
+  const upd = (i: number, c: Contact) => onChange({ contacts: section.contacts.map((x, j) => i === j ? c : x) });
+  return (
+    <div className="space-y-3">
+      {section.contacts.map((c, i) => (
+        <div key={c.id} className="p-3 rounded bg-slate-900 border border-slate-800 grid grid-cols-2 gap-2">
+          <input className={inputCls} placeholder="Name" value={c.name} onChange={(e) => upd(i, { ...c, name: e.target.value })} />
+          <input className={inputCls} placeholder="Role" value={c.role} onChange={(e) => upd(i, { ...c, role: e.target.value })} />
+          <input className={inputCls} placeholder="Phone" value={c.phone ?? ""} onChange={(e) => upd(i, { ...c, phone: e.target.value })} />
+          <input className={inputCls} placeholder="WhatsApp" value={c.whatsapp ?? ""} onChange={(e) => upd(i, { ...c, whatsapp: e.target.value })} />
+          <input className={inputCls + " col-span-2"} placeholder="Email" value={c.email ?? ""} onChange={(e) => upd(i, { ...c, email: e.target.value })} />
+          <button onClick={() => onChange({ contacts: section.contacts.filter((_, j) => j !== i) })} className="col-span-2 text-red-400 text-xs text-right">Remove</button>
+        </div>
+      ))}
+      <button onClick={() => onChange({ contacts: [...section.contacts, { id: uid(), name: "New contact", role: "" }] })} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add contact</button>
+    </div>
+  );
+}
+
+// ============ Theme Tab ============
+
+function ThemeTab({ site }: { site: SiteState }) {
+  const t = site.theme;
+  const update = (patch: Partial<Theme>) => setState((s) => ({ ...s, theme: { ...s.theme, ...patch } }));
+  return (
+    <div className="space-y-6 max-w-3xl">
+      <h2 className="text-lg font-semibold">Theme & Effects</h2>
+      <div>
+        <p className="text-xs uppercase tracking-wider text-slate-400 mb-2">Preset</p>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          {Object.keys(THEME_PRESETS).map(name => (
+            <button key={name} onClick={() => update({ preset: name, ...THEME_PRESETS[name] })} className={`p-3 rounded-lg text-xs text-left ${t.preset === name ? "bg-amber-500/20 border border-amber-500" : "bg-slate-900 border border-slate-800"}`}>
+              <div className="flex gap-1 mb-2">
+                {["primary","secondary","accent","background"].map(k => <span key={k} className="w-4 h-4 rounded" style={{ background: (THEME_PRESETS[name] as Record<string,string>)[k] }} />)}
+              </div>
+              {name}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {(["primary","secondary","accent","background","surface","text","muted"] as (keyof Theme)[]).map(k => (
+          <Field key={k} label={k}>
+            <input className={inputCls} value={String(t[k] ?? "")} onChange={(e) => update({ [k]: e.target.value } as Partial<Theme>)} />
+          </Field>
+        ))}
+      </div>
+      <div>
+        <p className="text-xs uppercase tracking-wider text-slate-400 mb-2">Typography</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+          {Object.keys(FONT_PRESETS).map(name => (
+            <button key={name} onClick={() => update({ fontPreset: name, headingFont: FONT_PRESETS[name].heading, bodyFont: FONT_PRESETS[name].body })} className={`p-3 rounded-lg text-sm text-left ${t.fontPreset === name ? "bg-amber-500/20 border border-amber-500" : "bg-slate-900 border border-slate-800"}`}>
+              <span style={{ fontFamily: FONT_PRESETS[name].heading }}>{name}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+      <details className="bg-slate-900 rounded-lg p-4">
+        <summary className="cursor-pointer text-sm font-medium">Default background</summary>
+        <div className="mt-3"><BackgroundEditor bg={t.defaultBackground} onChange={(bg) => bg && update({ defaultBackground: bg })} /></div>
+      </details>
+      <div>
+        <p className="text-xs uppercase tracking-wider text-slate-400 mb-2">Cursor effect</p>
+        <div className="grid grid-cols-4 gap-2">
+          {(["none","petals","hearts","sparkles","fireflies","snow","confetti","glow"] as CursorEffect[]).map(e => (
+            <button key={e} onClick={() => update({ cursorEffect: e })} className={`p-3 rounded-lg text-xs ${t.cursorEffect === e ? "bg-amber-500/20 border border-amber-500" : "bg-slate-900 border border-slate-800"}`}>{e}</button>
+          ))}
+        </div>
+        <div className="grid grid-cols-2 gap-3 mt-3">
+          <Field label="Cursor color"><input className={inputCls} value={t.cursorColor ?? ""} onChange={(e) => update({ cursorColor: e.target.value })} /></Field>
+          <Field label="Density"><input type="number" min={1} max={10} className={inputCls} value={t.cursorDensity ?? 3} onChange={(e) => update({ cursorDensity: Number(e.target.value) })} /></Field>
+        </div>
+      </div>
+      <div className="flex gap-4 text-sm">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={t.smoothScroll} onChange={(e) => update({ smoothScroll: e.target.checked })} /> Smooth scroll (Lenis)</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={t.snapSections} onChange={(e) => update({ snapSections: e.target.checked })} /> Snap sections</label>
+      </div>
+    </div>
+  );
+}
+
+// ============ Wishes Tab ============
+
+type Wish = { id: string; guest_name: string; message: string; wish_type: string; created_at: string };
+
+function WishesTab() {
+  const site = useSite();
+  const fetchWishes = useServerFn(listWishes);
+  const [wishes, setWishes] = useState<Wish[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  const load = async () => {
+    setLoading(true); setErr(null);
+    try {
+      const res = await fetchWishes({ data: { password: site.meta.adminPassword } });
+      setWishes(res.wishes as Wish[]);
+    } catch (e) { setErr((e as Error).message); }
+    setLoading(false);
+  };
+  useEffect(() => { load(); /* eslint-disable-next-line */ }, []);
+
+  const exportPdf = () => {
+    const doc = new jsPDF({ unit: "pt", format: "a5" });
+    const w = doc.internal.pageSize.getWidth();
+    doc.setFont("times", "italic");
+    doc.setFontSize(28);
+    doc.text(site.meta.eventName || "Guest Book", w / 2, 100, { align: "center" });
+    doc.setFontSize(12);
+    doc.text("A book of wishes, advice, and prayers.", w / 2, 130, { align: "center" });
+    wishes.forEach((wish) => {
+      doc.addPage();
+      doc.setFont("times", "bold"); doc.setFontSize(14);
+      doc.text(wish.guest_name, 40, 60);
+      doc.setFont("times", "italic"); doc.setFontSize(10);
+      doc.text(`${wish.wish_type} · ${new Date(wish.created_at).toLocaleDateString()}`, 40, 78);
+      doc.setFont("times", "normal"); doc.setFontSize(12);
+      const lines = doc.splitTextToSize(wish.message, w - 80);
+      doc.text(lines, 40, 110);
+    });
+    doc.save(`${(site.meta.eventName || "guest-book").replace(/\s+/g, "-")}.pdf`);
+  };
+
+  return (
+    <div className="space-y-4 max-w-3xl">
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold">Wishes ({wishes.length})</h2>
+        <div className="flex gap-2">
+          <button onClick={load} className="px-3 py-2 rounded bg-slate-800 text-sm">Refresh</button>
+          <button onClick={exportPdf} disabled={!wishes.length} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm disabled:opacity-50">Export PDF book</button>
+        </div>
+      </div>
+      {loading && <p className="text-sm text-slate-400">Loading…</p>}
+      {err && <p className="text-sm text-red-400">{err}</p>}
+      <div className="space-y-3">
+        {wishes.map((w) => (
+          <div key={w.id} className="p-4 rounded-lg bg-slate-900 border border-slate-800">
+            <div className="flex justify-between text-xs text-slate-400 mb-1">
+              <span><strong className="text-amber-400">{w.guest_name}</strong> · {w.wish_type}</span>
+              <span>{new Date(w.created_at).toLocaleString()}</span>
+            </div>
+            <p className="text-sm whitespace-pre-wrap">{w.message}</p>
+          </div>
+        ))}
+        {!loading && !wishes.length && <p className="text-sm text-slate-400">No wishes yet.</p>}
+      </div>
+    </div>
+  );
+}
+
+// ============ Settings ============
+
+function SettingsTab({ site }: { site: SiteState }) {
+  const update = (patch: Partial<SiteState["meta"]>) => setState((s) => ({ ...s, meta: { ...s.meta, ...patch } }));
+  return (
+    <div className="space-y-4 max-w-xl">
+      <h2 className="text-lg font-semibold">Settings</h2>
+      <Field label="Event type"><input className={inputCls} value={site.meta.eventType} onChange={(e) => update({ eventType: e.target.value })} /></Field>
+      <Field label="Event name"><input className={inputCls} value={site.meta.eventName} onChange={(e) => update({ eventName: e.target.value })} /></Field>
+      <Field label="Tagline"><input className={inputCls} value={site.meta.tagline ?? ""} onChange={(e) => update({ tagline: e.target.value })} /></Field>
+      <Field label="Admin password (local check only — server also enforces)">
+        <input className={inputCls} value={site.meta.adminPassword} onChange={(e) => update({ adminPassword: e.target.value })} />
+      </Field>
+      <p className="text-xs text-slate-400">For wishes to be readable from any device, set <code>ADMIN_PASSWORD</code> in backend secrets to the same value.</p>
+      <div className="flex gap-2 pt-4">
+        <button onClick={() => {
+          const blob = new Blob([JSON.stringify(site, null, 2)], { type: "application/json" });
+          const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "event-backup.json"; a.click();
+        }} className="px-3 py-2 rounded bg-slate-800 text-sm">Export config</button>
+        <label className="px-3 py-2 rounded bg-slate-800 text-sm cursor-pointer">Import config
+          <input type="file" accept="application/json" className="hidden" onChange={async (e) => {
+            const f = e.target.files?.[0]; if (!f) return;
+            const txt = await f.text();
+            try { const parsed = JSON.parse(txt) as SiteState; setState(() => parsed); }
+            catch { alert("Invalid file"); }
+          }} />
+        </label>
+        <button onClick={() => { if (confirm("Reset everything?")) resetState(); }} className="px-3 py-2 rounded bg-red-600 text-sm ml-auto">Reset all</button>
+      </div>
+    </div>
   );
 }
