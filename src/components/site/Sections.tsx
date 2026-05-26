@@ -16,6 +16,7 @@ import type {
 } from "@/lib/siteStore";
 import { Reveal, RevealText } from "./Reveal";
 import { BackgroundLayer } from "./BackgroundLayer";
+import { CinematicScene } from "./CinematicScene";
 import type { BackgroundConfig } from "@/lib/siteStore";
 
 function Wrap({
@@ -521,8 +522,7 @@ function ContactsBlock({ data, fallback }: { data: ContactsSectionData; fallback
 
 // ============ DISPATCH ============
 
-export function SectionRenderer({ section, fallback }: { section: Section; fallback?: BackgroundConfig }) {
-  if (!section.enabled) return null;
+function renderBlock(section: Section, fallback?: BackgroundConfig) {
   switch (section.kind) {
     case "hero": return <HeroBlock data={section} fallback={fallback} />;
     case "countdown": return <CountdownBlock data={section} fallback={fallback} />;
@@ -536,4 +536,30 @@ export function SectionRenderer({ section, fallback }: { section: Section; fallb
     case "contacts": return <ContactsBlock data={section} fallback={fallback} />;
     default: return null;
   }
+}
+
+export function SectionRenderer({
+  section,
+  fallback,
+  first = false,
+  last = false,
+  cinematic = true,
+}: {
+  section: Section;
+  fallback?: BackgroundConfig;
+  first?: boolean;
+  last?: boolean;
+  cinematic?: boolean;
+}) {
+  if (!section.enabled) return null;
+  const block = renderBlock(section, fallback);
+  if (!block) return null;
+  if (!cinematic) return <>{block}</>;
+  // Hero already has its own parallax + min-h-screen; pin it short for a clean handoff.
+  const length = section.kind === "hero" ? 1.4 : section.kind === "gallery" || section.kind === "timeline" ? 1.8 : 1.6;
+  return (
+    <CinematicScene length={length} first={first} last={last}>
+      <div className="w-full h-full">{block}</div>
+    </CinematicScene>
+  );
 }

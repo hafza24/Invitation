@@ -26,9 +26,15 @@ function HomePage() {
     <main className="min-h-screen overflow-x-hidden" style={{ background: site.theme.background, color: site.theme.text, fontFamily: site.theme.bodyFont }}>
       <SmoothScroll enabled={site.theme.smoothScroll} />
       <CursorEffects effect={site.theme.cursorEffect} color={site.theme.cursorColor} density={site.theme.cursorDensity ?? 3} />
-      <div className={site.theme.snapSections ? "snap-y snap-mandatory h-screen overflow-y-auto" : ""}>
-        {site.sections.map((s) => (
-          <SectionRenderer key={s.id} section={s} fallback={site.theme.defaultBackground} />
+      <div>
+        {site.sections.filter(s => s.enabled).map((s, i, arr) => (
+          <SectionRenderer
+            key={s.id}
+            section={s}
+            fallback={site.theme.defaultBackground}
+            first={i === 0}
+            last={i === arr.length - 1}
+          />
         ))}
         <footer className="text-center py-12 opacity-50 text-xs">
           <p>{site.meta.eventName || site.meta.eventType}</p>
