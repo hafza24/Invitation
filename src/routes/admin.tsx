@@ -313,7 +313,8 @@ function HeroEditor({ section, onChange }: { section: HeroSectionData; onChange:
   );
 }
 
-function PersonEditor({ label, p, onChange }: { label: string; p: { name: string; photo?: string; relation?: string; description?: string; personality?: string; remark?: string }; onChange: (p: typeof p) => void }) {
+type PersonLike = { name: string; photo?: string; relation?: string; description?: string; personality?: string; remark?: string };
+function PersonEditor({ label, p, onChange }: { label: string; p: PersonLike; onChange: (p: PersonLike) => void }) {
   return (
     <div className="space-y-2 p-3 rounded-lg bg-slate-950/50 border border-slate-800">
       <p className="text-xs uppercase tracking-wider text-amber-400">{label}</p>
