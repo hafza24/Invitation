@@ -707,17 +707,30 @@ export function applyTheme(t: Theme) {
 
 export function isAuthed(): boolean {
   if (typeof window === "undefined") return false;
-  return localStorage.getItem(AUTH_KEY) === "1";
+  return localStorage.getItem(AUTH_KEY) === "1" && !!localStorage.getItem(PW_KEY);
 }
-export function login(pw: string): boolean {
+
+/** Validates the admin password by attempting a save. Persists on success. */
+export async function login(pw: string): Promise<boolean> {
   ensureHydrated();
-  if (pw === state.meta.adminPassword) {
+  if (typeof window === "undefined") return false;
+  try {
+    await saveSiteConfig({
+      data: { password: pw, config: state as unknown as Record<string, unknown> },
+    });
+    localStorage.setItem(PW_KEY, pw);
     localStorage.setItem(AUTH_KEY, "1");
     return true;
+  } catch {
+    return false;
   }
-  return false;
 }
+
 export function logout() {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem(AUTH_KEY);
+  localStorage.removeItem(PW_KEY);
+}
   if (typeof window !== "undefined") localStorage.removeItem(AUTH_KEY);
 }
 
