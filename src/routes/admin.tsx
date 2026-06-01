@@ -78,6 +78,29 @@ function Login({ onLogin }: { onLogin: () => void }) {
   );
 }
 
+function SyncIndicator() {
+  const { status, error, lastSavedAt } = useSync();
+  const label =
+    status === "loading" ? "Loading…" :
+    status === "saving" ? "Saving…" :
+    status === "error" ? "Save failed" :
+    lastSavedAt ? `Saved ${new Date(lastSavedAt).toLocaleTimeString()}` :
+    "Synced";
+  const color =
+    status === "error" ? "text-red-400" :
+    status === "saving" || status === "loading" ? "text-amber-300" :
+    "text-emerald-400";
+  return (
+    <div className={`text-xs ${color}`} title={error ?? ""}>
+      <span className="inline-block w-1.5 h-1.5 rounded-full mr-1.5 align-middle" style={{ background: "currentColor" }} />
+      {label}
+      {status === "error" && (
+        <button onClick={() => void saveNow()} className="ml-2 underline">Retry</button>
+      )}
+    </div>
+  );
+}
+
 type Tab = "theme" | "sections" | "wishes" | "settings";
 
 function Dashboard({ onLogout }: { onLogout: () => void }) {
