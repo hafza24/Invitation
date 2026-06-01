@@ -442,59 +442,199 @@ export function seedSections(opts: { eventType: string; eventName: string; date?
 
 // ============ Store ============
 
-const KEY = "lovable-event-platform-v2";
+const CACHE_KEY = "lovable-event-platform-cache-v3";
 const AUTH_KEY = "lovable-event-admin-auth-v2";
+const PW_KEY = "lovable-event-admin-pw-v2";
+
+export type SyncStatus = "idle" | "loading" | "ready" | "saving" | "error";
 
 let state: SiteState = blankState();
 let hydrated = false;
+let loading = false;
+let syncStatus: SyncStatus = "idle";
+let syncError: string | null = null;
+let lastSavedAt: string | null = null;
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+let saveSeq = 0;
+let realtimeBound = false;
 const listeners = new Set<() => void>();
 
-function load(): SiteState {
-  if (typeof window === "undefined") return blankState();
+function readCache(): SiteState | null {
+  if (typeof window === "undefined") return null;
   try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw) return blankState();
-    const parsed = JSON.parse(raw) as SiteState;
-    const base = blankState();
-    return {
-      meta: { ...base.meta, ...parsed.meta },
-      theme: { ...base.theme, ...parsed.theme },
-      sections: Array.isArray(parsed.sections) ? parsed.sections : [],
-    };
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as SiteState;
   } catch {
-    return blankState();
+    return null;
+  }
+}
+
+function writeCache(s: SiteState) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(s));
+  } catch {
+    /* quota */
+  }
+}
+
+function mergeWithDefaults(parsed: Partial<SiteState> | null | undefined): SiteState {
+  const base = blankState();
+  if (!parsed) return base;
+  return {
+    meta: { ...base.meta, ...(parsed.meta ?? {}) },
+    theme: { ...base.theme, ...(parsed.theme ?? {}) },
+    sections: Array.isArray(parsed.sections) ? (parsed.sections as Section[]) : [],
+  };
+}
+
+function setSync(status: SyncStatus, error: string | null = null) {
+  syncStatus = status;
+  syncError = error;
+  emit();
+}
+
+async function hydrateFromRemote(force = false) {
+  if (typeof window === "undefined") return;
+  if (loading && !force) return;
+  loading = true;
+  setSync("loading");
+  try {
+    const { config, updatedAt } = await getSiteConfig();
+    if (config && Object.keys(config).length > 0) {
+      state = mergeWithDefaults(config as unknown as Partial<SiteState>);
+    } else {
+      // First-ever load: keep the cached draft if present (e.g. user filled
+      // onboarding before the table existed), otherwise stay blank.
+      const cached = readCache();
+      if (cached) state = mergeWithDefaults(cached);
+    }
+    writeCache(state);
+    applyTheme(state.theme);
+    lastSavedAt = updatedAt;
+    setSync("ready");
+  } catch (e) {
+    // Fall back to cache so the site is still usable offline.
+    const cached = readCache();
+    if (cached) {
+      state = mergeWithDefaults(cached);
+      applyTheme(state.theme);
+    }
+    setSync("error", e instanceof Error ? e.message : String(e));
+  } finally {
+    loading = false;
+    emit();
+  }
+}
+
+function bindRealtime() {
+  if (realtimeBound || typeof window === "undefined") return;
+  realtimeBound = true;
+  try {
+    supabase
+      .channel("site_config_changes")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "site_config", filter: "id=eq.default" },
+        (payload) => {
+          const next = (payload.new as { config?: unknown; updated_at?: string } | null)?.config;
+          if (!next) return;
+          // Ignore echoes of our own in-flight saves.
+          if (syncStatus === "saving") return;
+          state = mergeWithDefaults(next as Partial<SiteState>);
+          writeCache(state);
+          applyTheme(state.theme);
+          lastSavedAt = (payload.new as { updated_at?: string } | null)?.updated_at ?? lastSavedAt;
+          emit();
+        },
+      )
+      .subscribe();
+  } catch {
+    /* realtime is best-effort */
   }
 }
 
 function ensureHydrated() {
   if (hydrated || typeof window === "undefined") return;
-  state = load();
   hydrated = true;
-  applyTheme(state.theme);
+  const cached = readCache();
+  if (cached) {
+    state = mergeWithDefaults(cached);
+    applyTheme(state.theme);
+  }
+  void hydrateFromRemote();
+  bindRealtime();
 }
 
 function emit() {
   for (const l of listeners) l();
 }
 
+function scheduleSave() {
+  if (typeof window === "undefined") return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    void flushSave();
+  }, 600);
+}
+
+async function flushSave() {
+  const pw = typeof window !== "undefined" ? localStorage.getItem(PW_KEY) : null;
+  if (!pw) {
+    // No admin password = can't persist remotely yet; cache only.
+    return;
+  }
+  const mySeq = ++saveSeq;
+  setSync("saving");
+  try {
+    const { updatedAt } = await saveSiteConfig({
+      data: { password: pw, config: state as unknown as Record<string, unknown> },
+    });
+    if (mySeq !== saveSeq) return; // newer save already in flight
+    lastSavedAt = updatedAt;
+    setSync("ready");
+  } catch (e) {
+    setSync("error", e instanceof Error ? e.message : String(e));
+  }
+}
+
 export function setState(updater: (s: SiteState) => SiteState) {
   ensureHydrated();
   state = updater(state);
-  localStorage.setItem(KEY, JSON.stringify(state));
+  writeCache(state);
   applyTheme(state.theme);
   emit();
+  scheduleSave();
 }
 
 export function resetState() {
   state = blankState();
-  if (typeof window !== "undefined") localStorage.removeItem(KEY);
+  if (typeof window !== "undefined") localStorage.removeItem(CACHE_KEY);
   applyTheme(state.theme);
   emit();
+  scheduleSave();
 }
 
 export function getState(): SiteState {
   ensureHydrated();
   return state;
+}
+
+export function getSyncSnapshot() {
+  return { status: syncStatus, error: syncError, lastSavedAt };
+}
+
+export async function refreshFromRemote() {
+  await hydrateFromRemote(true);
+}
+
+export async function saveNow() {
+  if (saveTimer) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  await flushSave();
 }
 
 export function useSite(): SiteState {
@@ -509,6 +649,17 @@ export function useSite(): SiteState {
       return state;
     },
     () => blankState(),
+  );
+}
+
+export function useSync() {
+  return useSyncExternalStore(
+    (cb) => {
+      listeners.add(cb);
+      return () => listeners.delete(cb);
+    },
+    getSyncSnapshot,
+    () => ({ status: "idle" as SyncStatus, error: null, lastSavedAt: null }),
   );
 }
 
