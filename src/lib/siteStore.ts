@@ -1,4 +1,6 @@
 import { useSyncExternalStore } from "react";
+import { getSiteConfig, saveSiteConfig } from "@/lib/siteConfig.functions";
+import { supabase } from "@/integrations/supabase/client";
 
 // ============ Types ============
 
