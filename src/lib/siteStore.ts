@@ -731,8 +731,6 @@ export function logout() {
   localStorage.removeItem(AUTH_KEY);
   localStorage.removeItem(PW_KEY);
 }
-  if (typeof window !== "undefined") localStorage.removeItem(AUTH_KEY);
-}
 
 // ============ Helpers ============
 
