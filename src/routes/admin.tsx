@@ -50,17 +50,26 @@ function AdminPage() {
 function Login({ onLogin }: { onLogin: () => void }) {
   const [pw, setPw] = useState("");
   const [err, setErr] = useState("");
+  const [busy, setBusy] = useState(false);
   return (
     <main className="min-h-screen flex items-center justify-center p-6 bg-slate-950 text-slate-100">
       <form
-        onSubmit={(e) => { e.preventDefault(); login(pw) ? onLogin() : setErr("Wrong password"); }}
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setBusy(true);
+          setErr("");
+          const ok = await login(pw);
+          setBusy(false);
+          if (ok) onLogin();
+          else setErr("Wrong password");
+        }}
         className="w-full max-w-sm space-y-4 p-8 rounded-2xl bg-slate-900 border border-slate-800"
       >
         <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-slate-400">Default password: <code>admin123</code> (change in Settings)</p>
+        <p className="text-sm text-slate-400">Default password: <code>admin123</code> (set <code>ADMIN_PASSWORD</code> in backend secrets)</p>
         <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" className="w-full p-3 rounded-lg bg-slate-800 border border-slate-700" />
         {err && <p className="text-sm text-red-400">{err}</p>}
-        <button className="w-full p-3 rounded-lg bg-amber-500 text-slate-950 font-medium">Sign in</button>
+        <button disabled={busy} className="w-full p-3 rounded-lg bg-amber-500 text-slate-950 font-medium disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button>
         <Link to="/" className="text-xs text-slate-400 underline block text-center">← Back to site</Link>
       </form>
     </main>
