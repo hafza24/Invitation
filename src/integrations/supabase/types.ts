@@ -14,6 +14,24 @@ export type Database = {
   }
   public: {
     Tables: {
+      site_config: {
+        Row: {
+          config: Json
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          config?: Json
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          config?: Json
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       wishes: {
         Row: {
           created_at: string
