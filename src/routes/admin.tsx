@@ -102,6 +102,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           </button>
         ))}
         <div className="pt-6 space-y-2">
+          <SyncIndicator />
           <Link to="/" className="block text-xs text-slate-400 underline">View site →</Link>
           <button onClick={onLogout} className="block text-xs text-slate-400 underline">Sign out</button>
         </div>
