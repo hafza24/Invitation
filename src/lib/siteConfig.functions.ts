@@ -4,8 +4,6 @@ import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const ROW_ID = "default";
 
-type JsonObject = { [k: string]: unknown };
-
 export const getSiteConfig = createServerFn({ method: "GET" }).handler(async () => {
   const { data, error } = await supabaseAdmin
     .from("site_config")
@@ -13,10 +11,8 @@ export const getSiteConfig = createServerFn({ method: "GET" }).handler(async () 
     .eq("id", ROW_ID)
     .maybeSingle();
   if (error) throw new Error(error.message);
-  return {
-    config: (data?.config ?? null) as JsonObject | null,
-    updatedAt: (data?.updated_at ?? null) as string | null,
-  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return { config: (data?.config ?? null) as any, updatedAt: (data?.updated_at ?? null) as string | null };
 });
 
 const saveInput = z.object({
