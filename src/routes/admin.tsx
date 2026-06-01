@@ -3,8 +3,10 @@ import { useEffect, useState } from "react";
 import jsPDF from "jspdf";
 import {
   useSite,
+  useSync,
   setState,
   resetState,
+  saveNow,
   login,
   logout,
   isAuthed,
