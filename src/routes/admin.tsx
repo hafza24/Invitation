@@ -193,7 +193,7 @@ function SectionsTab({ site }: { site: SiteState }) {
         <details className="bg-slate-900 rounded-lg p-3">
           <summary className="cursor-pointer text-sm">+ Add section</summary>
           <div className="grid grid-cols-2 gap-2 mt-3">
-            {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","wishes","contacts"] as Section["kind"][]).map(k => (
+            {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","music","wishes","contacts"] as Section["kind"][]).map(k => (
               <button key={k} onClick={() => add(k)} className="p-2 text-xs rounded bg-slate-800 hover:bg-slate-700 capitalize">{k}</button>
             ))}
           </div>
