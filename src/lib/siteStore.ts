@@ -27,6 +27,7 @@ export type SectionKind =
   | "timeline"
   | "gallery"
   | "video"
+  | "music"
   | "wishes"
   | "contacts";
 
