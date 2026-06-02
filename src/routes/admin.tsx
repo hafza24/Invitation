@@ -159,8 +159,10 @@ function SectionsTab({ site }: { site: SiteState }) {
       case "timeline": next = { ...base, kind: "timeline", title: "Journey", layout: "vertical", milestones: [] } as TimelineSectionData; break;
       case "gallery": next = { ...base, kind: "gallery", title: "Gallery", layout: "masonry", items: [] } as GallerySectionData; break;
       case "video": next = { ...base, kind: "video", title: "Watch", source: "youtube", url: "", display: "fullscreen", muted: true } as VideoSectionData; break;
+      case "music": next = { ...base, kind: "music", title: "Our Song", url: "", trackTitle: "", artist: "", loop: true, display: "card" } as MusicSectionData; break;
       case "wishes": next = { ...base, kind: "wishes", title: "Leave a Wish", prompt: "Your words become part of our forever." } as WishesSectionData; break;
       case "contacts": next = { ...base, kind: "contacts", title: "Contact", contacts: [] } as ContactsSectionData; break;
+      default: return;
     }
     setState((s) => ({ ...s, sections: [...s.sections, next] }));
     setSelectedId(next.id);
