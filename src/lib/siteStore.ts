@@ -502,9 +502,20 @@ function mergeWithDefaults(parsed: Partial<SiteState> | null | undefined): SiteS
   };
 }
 
+let syncSnapshot: { status: SyncStatus; error: string | null; lastSavedAt: string | null } = {
+  status: "idle",
+  error: null,
+  lastSavedAt: null,
+};
+
+function refreshSyncSnapshot() {
+  syncSnapshot = { status: syncStatus, error: syncError, lastSavedAt };
+}
+
 function setSync(status: SyncStatus, error: string | null = null) {
   syncStatus = status;
   syncError = error;
+  refreshSyncSnapshot();
   emit();
 }
 
