@@ -509,6 +509,32 @@ function VideoEditor({ section, onChange }: { section: VideoSectionData; onChang
   );
 }
 
+function MusicEditor({ section, onChange }: { section: MusicSectionData; onChange: (p: Partial<MusicSectionData>) => void }) {
+  return (
+    <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
+      <Field label="Audio URL (mp3)">
+        <div className="flex gap-2 items-start">
+          <input className={inputCls} placeholder="https://… or upload" value={section.url} onChange={(e) => onChange({ url: e.target.value })} />
+          <label className="px-3 py-2.5 rounded-lg bg-slate-800 text-xs cursor-pointer whitespace-nowrap">
+            Upload
+            <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) onChange({ url: await fileToBase64(f) }); }} />
+          </label>
+        </div>
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Track title"><input className={inputCls} value={section.trackTitle ?? ""} onChange={(e) => onChange({ trackTitle: e.target.value })} /></Field>
+        <Field label="Artist"><input className={inputCls} value={section.artist ?? ""} onChange={(e) => onChange({ artist: e.target.value })} /></Field>
+      </div>
+      <Field label="Cover art"><ImageInput value={section.coverArt} onChange={(v) => onChange({ coverArt: v })} /></Field>
+      {section.url && <audio src={section.url} controls className="w-full" />}
+      <div className="flex gap-4 text-xs">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.autoplay} onChange={(e) => onChange({ autoplay: e.target.checked })} /> Autoplay</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={section.loop !== false} onChange={(e) => onChange({ loop: e.target.checked })} /> Loop</label>
+      </div>
+    </div>
+  );
+}
+
 function ContactsEditor({ section, onChange }: { section: ContactsSectionData; onChange: (p: Partial<ContactsSectionData>) => void }) {
   const upd = (i: number, c: Contact) => onChange({ contacts: section.contacts.map((x, j) => i === j ? c : x) });
   return (
