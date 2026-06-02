@@ -28,6 +28,7 @@ import {
   type TimelineSectionData,
   type GallerySectionData,
   type VideoSectionData,
+  type MusicSectionData,
   type ContactsSectionData,
   type WishesSectionData,
   type CountdownSectionData,
