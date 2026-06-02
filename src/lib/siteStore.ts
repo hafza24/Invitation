@@ -502,9 +502,20 @@ function mergeWithDefaults(parsed: Partial<SiteState> | null | undefined): SiteS
   };
 }
 
+let syncSnapshot: { status: SyncStatus; error: string | null; lastSavedAt: string | null } = {
+  status: "idle",
+  error: null,
+  lastSavedAt: null,
+};
+
+function refreshSyncSnapshot() {
+  syncSnapshot = { status: syncStatus, error: syncError, lastSavedAt };
+}
+
 function setSync(status: SyncStatus, error: string | null = null) {
   syncStatus = status;
   syncError = error;
+  refreshSyncSnapshot();
   emit();
 }
 
@@ -559,6 +570,7 @@ function bindRealtime() {
           writeCache(state);
           applyTheme(state.theme);
           lastSavedAt = (payload.new as { updated_at?: string } | null)?.updated_at ?? lastSavedAt;
+          refreshSyncSnapshot();
           emit();
         },
       )
@@ -635,7 +647,7 @@ export function getState(): SiteState {
 }
 
 export function getSyncSnapshot() {
-  return { status: syncStatus, error: syncError, lastSavedAt };
+  return syncSnapshot;
 }
 
 export async function refreshFromRemote() {
@@ -672,7 +684,7 @@ export function useSync() {
       return () => listeners.delete(cb);
     },
     getSyncSnapshot,
-    () => ({ status: "idle" as SyncStatus, error: null, lastSavedAt: null }),
+    getSyncSnapshot,
   );
 }
 
