@@ -28,6 +28,7 @@ import {
   type TimelineSectionData,
   type GallerySectionData,
   type VideoSectionData,
+  type MusicSectionData,
   type ContactsSectionData,
   type WishesSectionData,
   type CountdownSectionData,
@@ -106,6 +107,17 @@ type Tab = "theme" | "sections" | "wishes" | "settings";
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const site = useSite();
   const [tab, setTab] = useState<Tab>("sections");
+  const [preview, setPreview] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0);
+  const { status, lastSavedAt } = useSync();
+  // Refresh the preview iframe shortly after a save completes so the latest
+  // realtime payload is reflected even if the iframe missed the channel update.
+  useEffect(() => {
+    if (status === "ready" && preview) {
+      const t = setTimeout(() => setPreviewKey((k) => k + 1), 400);
+      return () => clearTimeout(t);
+    }
+  }, [lastSavedAt, status, preview]);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
@@ -126,16 +138,39 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         ))}
         <div className="pt-6 space-y-2">
           <SyncIndicator />
+          <button
+            onClick={() => setPreview((p) => !p)}
+            className={`block w-full text-left text-xs px-3 py-2 rounded-lg ${preview ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800"}`}
+          >
+            {preview ? "✓ Live preview on" : "Show live preview"}
+          </button>
           <Link to="/" className="block text-xs text-slate-400 underline">View site →</Link>
           <button onClick={onLogout} className="block text-xs text-slate-400 underline">Sign out</button>
         </div>
       </aside>
-      <main className="flex-1 p-6 md:p-10 max-w-5xl">
+      <main className={`flex-1 p-6 md:p-10 overflow-auto ${preview ? "max-w-2xl" : "max-w-5xl"}`}>
         {tab === "sections" && <SectionsTab site={site} />}
         {tab === "theme" && <ThemeTab site={site} />}
         {tab === "wishes" && <WishesTab />}
         {tab === "settings" && <SettingsTab site={site} />}
       </main>
+      {preview && (
+        <aside className="hidden lg:flex flex-col w-[480px] xl:w-[560px] border-l border-slate-800 bg-slate-900/40">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 text-xs">
+            <span className="text-slate-400">Live preview</span>
+            <div className="flex gap-2">
+              <button onClick={() => setPreviewKey((k) => k + 1)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Refresh</button>
+              <a href="/" target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Open ↗</a>
+            </div>
+          </div>
+          <iframe
+            key={previewKey}
+            src="/"
+            title="Live preview"
+            className="flex-1 w-full bg-black"
+          />
+        </aside>
+      )}
     </div>
   );
 }
@@ -158,8 +193,10 @@ function SectionsTab({ site }: { site: SiteState }) {
       case "timeline": next = { ...base, kind: "timeline", title: "Journey", layout: "vertical", milestones: [] } as TimelineSectionData; break;
       case "gallery": next = { ...base, kind: "gallery", title: "Gallery", layout: "masonry", items: [] } as GallerySectionData; break;
       case "video": next = { ...base, kind: "video", title: "Watch", source: "youtube", url: "", display: "fullscreen", muted: true } as VideoSectionData; break;
+      case "music": next = { ...base, kind: "music", title: "Our Song", url: "", trackTitle: "", artist: "", loop: true, display: "card" } as MusicSectionData; break;
       case "wishes": next = { ...base, kind: "wishes", title: "Leave a Wish", prompt: "Your words become part of our forever." } as WishesSectionData; break;
       case "contacts": next = { ...base, kind: "contacts", title: "Contact", contacts: [] } as ContactsSectionData; break;
+      default: return;
     }
     setState((s) => ({ ...s, sections: [...s.sections, next] }));
     setSelectedId(next.id);
@@ -190,7 +227,7 @@ function SectionsTab({ site }: { site: SiteState }) {
         <details className="bg-slate-900 rounded-lg p-3">
           <summary className="cursor-pointer text-sm">+ Add section</summary>
           <div className="grid grid-cols-2 gap-2 mt-3">
-            {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","wishes","contacts"] as Section["kind"][]).map(k => (
+            {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","music","wishes","contacts"] as Section["kind"][]).map(k => (
               <button key={k} onClick={() => add(k)} className="p-2 text-xs rounded bg-slate-800 hover:bg-slate-700 capitalize">{k}</button>
             ))}
           </div>
@@ -255,6 +292,7 @@ function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { 
       {section.kind === "timeline" && <TimelineEditor section={section} onChange={onChange as (p: Partial<TimelineSectionData>) => void} />}
       {section.kind === "gallery" && <GalleryEditor section={section} onChange={onChange as (p: Partial<GallerySectionData>) => void} />}
       {section.kind === "video" && <VideoEditor section={section} onChange={onChange as (p: Partial<VideoSectionData>) => void} />}
+      {section.kind === "music" && <MusicEditor section={section} onChange={onChange as (p: Partial<MusicSectionData>) => void} />}
       {section.kind === "wishes" && <Field label="Prompt"><input className={inputCls} value={section.prompt ?? ""} onChange={(e) => onChange({ prompt: e.target.value })} /></Field>}
       {section.kind === "contacts" && <ContactsEditor section={section} onChange={onChange as (p: Partial<ContactsSectionData>) => void} />}
     </div>
@@ -500,6 +538,32 @@ function VideoEditor({ section, onChange }: { section: VideoSectionData; onChang
         <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.autoplay} onChange={(e) => onChange({ autoplay: e.target.checked })} /> Autoplay</label>
         <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.loop} onChange={(e) => onChange({ loop: e.target.checked })} /> Loop</label>
         <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.muted} onChange={(e) => onChange({ muted: e.target.checked })} /> Muted</label>
+      </div>
+    </div>
+  );
+}
+
+function MusicEditor({ section, onChange }: { section: MusicSectionData; onChange: (p: Partial<MusicSectionData>) => void }) {
+  return (
+    <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
+      <Field label="Audio URL (mp3)">
+        <div className="flex gap-2 items-start">
+          <input className={inputCls} placeholder="https://… or upload" value={section.url} onChange={(e) => onChange({ url: e.target.value })} />
+          <label className="px-3 py-2.5 rounded-lg bg-slate-800 text-xs cursor-pointer whitespace-nowrap">
+            Upload
+            <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) onChange({ url: await fileToBase64(f) }); }} />
+          </label>
+        </div>
+      </Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Track title"><input className={inputCls} value={section.trackTitle ?? ""} onChange={(e) => onChange({ trackTitle: e.target.value })} /></Field>
+        <Field label="Artist"><input className={inputCls} value={section.artist ?? ""} onChange={(e) => onChange({ artist: e.target.value })} /></Field>
+      </div>
+      <Field label="Cover art"><ImageInput value={section.coverArt} onChange={(v) => onChange({ coverArt: v })} /></Field>
+      {section.url && <audio src={section.url} controls className="w-full" />}
+      <div className="flex gap-4 text-xs">
+        <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.autoplay} onChange={(e) => onChange({ autoplay: e.target.checked })} /> Autoplay</label>
+        <label className="flex items-center gap-2"><input type="checkbox" checked={section.loop !== false} onChange={(e) => onChange({ loop: e.target.checked })} /> Loop</label>
       </div>
     </div>
   );

@@ -27,6 +27,7 @@ export type SectionKind =
   | "timeline"
   | "gallery"
   | "video"
+  | "music"
   | "wishes"
   | "contacts";
 
@@ -138,6 +139,17 @@ export interface VideoSectionData extends SectionBase {
   caption?: string;
 }
 
+export interface MusicSectionData extends SectionBase {
+  kind: "music";
+  url: string;
+  trackTitle?: string;
+  artist?: string;
+  coverArt?: string;
+  autoplay?: boolean;
+  loop?: boolean;
+  display?: "floating" | "card";
+}
+
 export interface WishesSectionData extends SectionBase {
   kind: "wishes";
   prompt?: string;
@@ -166,6 +178,7 @@ export type Section =
   | TimelineSectionData
   | GallerySectionData
   | VideoSectionData
+  | MusicSectionData
   | WishesSectionData
   | ContactsSectionData;
 

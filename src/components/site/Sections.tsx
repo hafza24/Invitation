@@ -11,6 +11,7 @@ import type {
   TimelineSectionData,
   GallerySectionData,
   VideoSectionData,
+  MusicSectionData,
   WishesSectionData,
   ContactsSectionData,
 } from "@/lib/siteStore";
@@ -520,6 +521,53 @@ function ContactsBlock({ data, fallback }: { data: ContactsSectionData; fallback
   );
 }
 
+// ============ MUSIC ============
+
+function MusicBlock({ data, fallback }: { data: MusicSectionData; fallback?: BackgroundConfig }) {
+  const audioRef = useRef<HTMLAudioElement>(null);
+  const [playing, setPlaying] = useState(!!data.autoplay);
+  const toggle = () => {
+    const a = audioRef.current;
+    if (!a) return;
+    if (a.paused) { void a.play(); setPlaying(true); } else { a.pause(); setPlaying(false); }
+  };
+  return (
+    <Wrap bg={data.background} fallback={fallback}>
+      <div className="max-w-2xl mx-auto text-center">
+        {data.title && (
+          <Reveal anim="fade-up">
+            <h2 className="text-5xl sm:text-6xl mb-10" style={{ fontFamily: "var(--font-heading)" }}>{data.title}</h2>
+          </Reveal>
+        )}
+        <Reveal anim="zoom-in" delay={0.1}>
+          <div
+            className="p-8 rounded-3xl backdrop-blur flex items-center gap-6"
+            style={{
+              background: "color-mix(in oklab, var(--card) 70%, transparent)",
+              border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)",
+              boxShadow: "0 30px 80px -20px color-mix(in oklab, var(--primary) 40%, transparent)",
+            }}
+          >
+            {data.coverArt ? (
+              <img src={data.coverArt} alt="" className="w-24 h-24 rounded-2xl object-cover" />
+            ) : (
+              <div className="w-24 h-24 rounded-2xl flex items-center justify-center text-3xl" style={{ background: "var(--primary)", color: "var(--background)" }}>♪</div>
+            )}
+            <div className="flex-1 text-left">
+              {data.trackTitle && <p className="text-2xl" style={{ fontFamily: "var(--font-heading)" }}>{data.trackTitle}</p>}
+              {data.artist && <p className="opacity-70 text-sm">{data.artist}</p>}
+            </div>
+            <button onClick={toggle} aria-label={playing ? "Pause" : "Play"} className="w-14 h-14 rounded-full flex items-center justify-center text-2xl" style={{ background: "var(--primary)", color: "var(--background)" }}>
+              {playing ? "❚❚" : "▶"}
+            </button>
+            <audio ref={audioRef} src={data.url} loop={data.loop} autoPlay={data.autoplay} preload="metadata" onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} />
+          </div>
+        </Reveal>
+      </div>
+    </Wrap>
+  );
+}
+
 // ============ DISPATCH ============
 
 function renderBlock(section: Section, fallback?: BackgroundConfig) {
@@ -532,6 +580,7 @@ function renderBlock(section: Section, fallback?: BackgroundConfig) {
     case "timeline": return <TimelineBlock data={section} fallback={fallback} />;
     case "gallery": return <GalleryBlock data={section} fallback={fallback} />;
     case "video": return <VideoBlock data={section} fallback={fallback} />;
+    case "music": return <MusicBlock data={section} fallback={fallback} />;
     case "wishes": return <WishesBlock data={section} fallback={fallback} />;
     case "contacts": return <ContactsBlock data={section} fallback={fallback} />;
     default: return null;
