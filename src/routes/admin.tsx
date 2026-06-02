@@ -107,6 +107,17 @@ type Tab = "theme" | "sections" | "wishes" | "settings";
 function Dashboard({ onLogout }: { onLogout: () => void }) {
   const site = useSite();
   const [tab, setTab] = useState<Tab>("sections");
+  const [preview, setPreview] = useState(false);
+  const [previewKey, setPreviewKey] = useState(0);
+  const { status, lastSavedAt } = useSync();
+  // Refresh the preview iframe shortly after a save completes so the latest
+  // realtime payload is reflected even if the iframe missed the channel update.
+  useEffect(() => {
+    if (status === "ready" && preview) {
+      const t = setTimeout(() => setPreviewKey((k) => k + 1), 400);
+      return () => clearTimeout(t);
+    }
+  }, [lastSavedAt, status, preview]);
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
@@ -127,16 +138,39 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
         ))}
         <div className="pt-6 space-y-2">
           <SyncIndicator />
+          <button
+            onClick={() => setPreview((p) => !p)}
+            className={`block w-full text-left text-xs px-3 py-2 rounded-lg ${preview ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800"}`}
+          >
+            {preview ? "✓ Live preview on" : "Show live preview"}
+          </button>
           <Link to="/" className="block text-xs text-slate-400 underline">View site →</Link>
           <button onClick={onLogout} className="block text-xs text-slate-400 underline">Sign out</button>
         </div>
       </aside>
-      <main className="flex-1 p-6 md:p-10 max-w-5xl">
+      <main className={`flex-1 p-6 md:p-10 overflow-auto ${preview ? "max-w-2xl" : "max-w-5xl"}`}>
         {tab === "sections" && <SectionsTab site={site} />}
         {tab === "theme" && <ThemeTab site={site} />}
         {tab === "wishes" && <WishesTab />}
         {tab === "settings" && <SettingsTab site={site} />}
       </main>
+      {preview && (
+        <aside className="hidden lg:flex flex-col w-[480px] xl:w-[560px] border-l border-slate-800 bg-slate-900/40">
+          <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 text-xs">
+            <span className="text-slate-400">Live preview</span>
+            <div className="flex gap-2">
+              <button onClick={() => setPreviewKey((k) => k + 1)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Refresh</button>
+              <a href="/" target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Open ↗</a>
+            </div>
+          </div>
+          <iframe
+            key={previewKey}
+            src="/"
+            title="Live preview"
+            className="flex-1 w-full bg-black"
+          />
+        </aside>
+      )}
     </div>
   );
 }
