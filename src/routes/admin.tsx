@@ -258,6 +258,7 @@ function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { 
       {section.kind === "timeline" && <TimelineEditor section={section} onChange={onChange as (p: Partial<TimelineSectionData>) => void} />}
       {section.kind === "gallery" && <GalleryEditor section={section} onChange={onChange as (p: Partial<GallerySectionData>) => void} />}
       {section.kind === "video" && <VideoEditor section={section} onChange={onChange as (p: Partial<VideoSectionData>) => void} />}
+      {section.kind === "music" && <MusicEditor section={section} onChange={onChange as (p: Partial<MusicSectionData>) => void} />}
       {section.kind === "wishes" && <Field label="Prompt"><input className={inputCls} value={section.prompt ?? ""} onChange={(e) => onChange({ prompt: e.target.value })} /></Field>}
       {section.kind === "contacts" && <ContactsEditor section={section} onChange={onChange as (p: Partial<ContactsSectionData>) => void} />}
     </div>
