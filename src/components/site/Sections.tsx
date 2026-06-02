@@ -11,6 +11,7 @@ import type {
   TimelineSectionData,
   GallerySectionData,
   VideoSectionData,
+  MusicSectionData,
   WishesSectionData,
   ContactsSectionData,
 } from "@/lib/siteStore";
