@@ -646,7 +646,7 @@ export function getState(): SiteState {
 }
 
 export function getSyncSnapshot() {
-  return { status: syncStatus, error: syncError, lastSavedAt };
+  return syncSnapshot;
 }
 
 export async function refreshFromRemote() {
