@@ -684,7 +684,7 @@ export function useSync() {
       return () => listeners.delete(cb);
     },
     getSyncSnapshot,
-    () => ({ status: "idle" as SyncStatus, error: null, lastSavedAt: null }),
+    getSyncSnapshot,
   );
 }
 
