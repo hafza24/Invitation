@@ -570,6 +570,7 @@ function bindRealtime() {
           writeCache(state);
           applyTheme(state.theme);
           lastSavedAt = (payload.new as { updated_at?: string } | null)?.updated_at ?? lastSavedAt;
+          refreshSyncSnapshot();
           emit();
         },
       )
