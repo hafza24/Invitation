@@ -218,7 +218,6 @@ export interface SiteMeta {
   eventType: string; // Wedding, Birthday, etc
   eventName: string;
   tagline?: string;
-  adminPassword: string;
 }
 
 export interface SiteState {
@@ -366,11 +365,26 @@ function blankState(): SiteState {
       eventType: "Wedding",
       eventName: "",
       tagline: "",
-      adminPassword: "admin123",
     },
     theme: defaultTheme(),
     sections: [],
   };
+}
+
+/** Returns the currently authenticated admin password (held only client-side after login). */
+export function getAdminPassword(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(PW_KEY);
+}
+
+/** Strip any legacy admin password leaked into persisted config. */
+function sanitizeIncomingState(s: SiteState): SiteState {
+  if (s?.meta && "adminPassword" in (s.meta as Record<string, unknown>)) {
+    const { adminPassword: _drop, ...rest } = s.meta as SiteMeta & { adminPassword?: string };
+    void _drop;
+    return { ...s, meta: rest as SiteMeta };
+  }
+  return s;
 }
 
 export function seedSections(opts: { eventType: string; eventName: string; date?: string }): Section[] {
