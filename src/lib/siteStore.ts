@@ -218,7 +218,6 @@ export interface SiteMeta {
   eventType: string; // Wedding, Birthday, etc
   eventName: string;
   tagline?: string;
-  adminPassword: string;
 }
 
 export interface SiteState {
@@ -366,11 +365,16 @@ function blankState(): SiteState {
       eventType: "Wedding",
       eventName: "",
       tagline: "",
-      adminPassword: "admin123",
     },
     theme: defaultTheme(),
     sections: [],
   };
+}
+
+/** Returns the currently authenticated admin password (held only client-side after login). */
+export function getAdminPassword(): string | null {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(PW_KEY);
 }
 
 export function seedSections(opts: { eventType: string; eventName: string; date?: string }): Section[] {
@@ -495,8 +499,12 @@ function writeCache(s: SiteState) {
 function mergeWithDefaults(parsed: Partial<SiteState> | null | undefined): SiteState {
   const base = blankState();
   if (!parsed) return base;
+  // Strip any legacy adminPassword that may have been persisted into the
+  // publicly-readable site_config blob from older builds.
+  const incomingMeta = { ...(parsed.meta ?? {}) } as Partial<SiteMeta> & { adminPassword?: string };
+  delete incomingMeta.adminPassword;
   return {
-    meta: { ...base.meta, ...(parsed.meta ?? {}) },
+    meta: { ...base.meta, ...incomingMeta },
     theme: { ...base.theme, ...(parsed.theme ?? {}) },
     sections: Array.isArray(parsed.sections) ? (parsed.sections as Section[]) : [],
   };

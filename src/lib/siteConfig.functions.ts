@@ -26,10 +26,19 @@ export const saveSiteConfig = createServerFn({ method: "POST" })
     const expected = process.env.ADMIN_PASSWORD || "admin123";
     if (data.password !== expected) throw new Error("Unauthorized");
 
+    // Defense-in-depth: strip any secret-like fields before persisting into
+    // the publicly-readable site_config row.
+    const cfg = (data.config && typeof data.config === "object" ? { ...(data.config as Record<string, unknown>) } : {}) as Record<string, unknown>;
+    if (cfg.meta && typeof cfg.meta === "object") {
+      const meta = { ...(cfg.meta as Record<string, unknown>) };
+      delete meta.adminPassword;
+      cfg.meta = meta;
+    }
+
     const { data: row, error } = await supabaseAdmin
       .from("site_config")
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .upsert({ id: ROW_ID, config: data.config as any, updated_at: new Date().toISOString() })
+      .upsert({ id: ROW_ID, config: cfg as any, updated_at: new Date().toISOString() })
       .select("updated_at")
       .single();
     if (error) throw new Error(error.message);

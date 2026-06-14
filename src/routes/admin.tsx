@@ -10,6 +10,7 @@ import {
   login,
   logout,
   isAuthed,
+  getAdminPassword,
   uid,
   THEME_PRESETS,
   FONT_PRESETS,
@@ -664,7 +665,9 @@ function WishesTab() {
   const load = async () => {
     setLoading(true); setErr(null);
     try {
-      const res = await fetchWishes({ data: { password: site.meta.adminPassword } });
+      const pw = getAdminPassword();
+      if (!pw) throw new Error("Not signed in");
+      const res = await fetchWishes({ data: { password: pw } });
       setWishes(res.wishes as Wish[]);
     } catch (e) { setErr((e as Error).message); }
     setLoading(false);
@@ -729,10 +732,8 @@ function SettingsTab({ site }: { site: SiteState }) {
       <Field label="Event type"><input className={inputCls} value={site.meta.eventType} onChange={(e) => update({ eventType: e.target.value })} /></Field>
       <Field label="Event name"><input className={inputCls} value={site.meta.eventName} onChange={(e) => update({ eventName: e.target.value })} /></Field>
       <Field label="Tagline"><input className={inputCls} value={site.meta.tagline ?? ""} onChange={(e) => update({ tagline: e.target.value })} /></Field>
-      <Field label="Admin password (local check only — server also enforces)">
-        <input className={inputCls} value={site.meta.adminPassword} onChange={(e) => update({ adminPassword: e.target.value })} />
-      </Field>
-      <p className="text-xs text-slate-400">For wishes to be readable from any device, set <code>ADMIN_PASSWORD</code> in backend secrets to the same value.</p>
+      <p className="text-xs text-slate-400">Admin access is gated by the <code>ADMIN_PASSWORD</code> backend secret. It is never stored in the public site config.</p>
+
       <div className="flex gap-2 pt-4">
         <button onClick={() => {
           const blob = new Blob([JSON.stringify(site, null, 2)], { type: "application/json" });
