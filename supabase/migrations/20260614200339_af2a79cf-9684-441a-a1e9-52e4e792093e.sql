@@ -1,0 +1,1 @@
+UPDATE public.site_config SET config = jsonb_set(config, '{meta}', (config->'meta') - 'adminPassword', false) WHERE config->'meta' ? 'adminPassword';
