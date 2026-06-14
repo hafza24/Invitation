@@ -377,16 +377,6 @@ export function getAdminPassword(): string | null {
   return localStorage.getItem(PW_KEY);
 }
 
-/** Strip any legacy admin password leaked into persisted config. */
-function sanitizeIncomingState(s: SiteState): SiteState {
-  if (s?.meta && "adminPassword" in (s.meta as Record<string, unknown>)) {
-    const { adminPassword: _drop, ...rest } = s.meta as SiteMeta & { adminPassword?: string };
-    void _drop;
-    return { ...s, meta: rest as SiteMeta };
-  }
-  return s;
-}
-
 export function seedSections(opts: { eventType: string; eventName: string; date?: string }): Section[] {
   const date = opts.date || new Date(Date.now() + 1000 * 60 * 60 * 24 * 60).toISOString();
   return [
@@ -509,8 +499,12 @@ function writeCache(s: SiteState) {
 function mergeWithDefaults(parsed: Partial<SiteState> | null | undefined): SiteState {
   const base = blankState();
   if (!parsed) return base;
+  // Strip any legacy adminPassword that may have been persisted into the
+  // publicly-readable site_config blob from older builds.
+  const incomingMeta = { ...(parsed.meta ?? {}) } as Partial<SiteMeta> & { adminPassword?: string };
+  delete incomingMeta.adminPassword;
   return {
-    meta: { ...base.meta, ...(parsed.meta ?? {}) },
+    meta: { ...base.meta, ...incomingMeta },
     theme: { ...base.theme, ...(parsed.theme ?? {}) },
     sections: Array.isArray(parsed.sections) ? (parsed.sections as Section[]) : [],
   };
