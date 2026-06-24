@@ -72,18 +72,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "invitation" },
-      { name: "description", content: "A luxury, interactive wedding invitation website with a content management system." },
-      { name: "author", content: "Lovable" },
-      { property: "og:title", content: "invitation" },
-      { property: "og:description", content: "A luxury, interactive wedding invitation website with a content management system." },
+      { name: "theme-color", content: "#0b0b10" },
       { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary" },
-      { name: "twitter:site", content: "@Lovable" },
-      { name: "twitter:title", content: "invitation" },
-      { name: "twitter:description", content: "A luxury, interactive wedding invitation website with a content management system." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/af9bf225-6dc6-4578-8249-78c0ca4e6e99/id-preview-6d9fc7a0--c3013703-2537-4606-a804-ea9fa8a0a524.lovable.app-1779547151965.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/af9bf225-6dc6-4578-8249-78c0ca4e6e99/id-preview-6d9fc7a0--c3013703-2537-4606-a804-ea9fa8a0a524.lovable.app-1779547151965.png" },
+      { property: "og:site_name", content: "Cinematic Invitations" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },
@@ -92,6 +84,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         rel: "stylesheet",
         href: "https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,400&family=Inter:wght@300;400;500;600&family=Great+Vibes&display=swap",
+      },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "WebSite",
+          name: "Cinematic Invitations",
+          url: "https://story-scroll-suite.lovable.app",
+        }),
       },
     ],
   }),

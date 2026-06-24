@@ -7,11 +7,38 @@ import { CursorEffects } from "@/components/site/CursorEffects";
 import { SmoothScroll } from "@/components/site/SmoothScroll";
 import { Reveal } from "@/components/site/Reveal";
 
+const SITE_URL = "https://story-scroll-suite.lovable.app";
+const TITLE = "Cinematic Invitations — Luxury Wedding & Event Invitation Websites";
+const DESCRIPTION =
+  "Build a luxury, scroll-controlled invitation website for weddings, nikahs, birthdays and more. Cinematic animations, RSVP, gallery, timeline — fully editable.";
+
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "An Invitation" },
-      { name: "description", content: "A cinematic invitation experience." },
+      { title: TITLE },
+      { name: "description", content: DESCRIPTION },
+      { property: "og:title", content: TITLE },
+      { property: "og:description", content: DESCRIPTION },
+      { property: "og:url", content: SITE_URL + "/" },
+      { property: "og:type", content: "website" },
+      { name: "twitter:title", content: TITLE },
+      { name: "twitter:description", content: DESCRIPTION },
+    ],
+    links: [{ rel: "canonical", href: SITE_URL + "/" }],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "Cinematic Invitations",
+          description: DESCRIPTION,
+          applicationCategory: "DesignApplication",
+          operatingSystem: "Web",
+          url: SITE_URL,
+          offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+        }),
+      },
     ],
   }),
   component: HomePage,
