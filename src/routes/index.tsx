@@ -50,7 +50,7 @@ function HomePage() {
     return <FirstRun />;
   }
   return (
-    <main className="min-h-screen overflow-x-hidden" style={{ background: site.theme.background, color: site.theme.text, fontFamily: site.theme.bodyFont }}>
+    <main className="min-h-dvh overflow-x-hidden" style={{ background: site.theme.background, color: site.theme.text, fontFamily: site.theme.bodyFont }}>
       <SmoothScroll enabled={site.theme.smoothScroll} />
       <CursorEffects effect={site.theme.cursorEffect} color={site.theme.cursorColor} density={site.theme.cursorDensity ?? 3} />
       <div>
