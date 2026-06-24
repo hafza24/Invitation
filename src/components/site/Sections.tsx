@@ -54,7 +54,7 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   return (
-    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
+    <section ref={ref} className="relative min-h-dvh flex items-center justify-center overflow-hidden px-4 sm:px-6">
       <BackgroundLayer bg={data.background} fallback={fallback} />
       <motion.div style={{ y, opacity }} className="relative z-10 text-center max-w-5xl">
         {data.eyebrow && (
