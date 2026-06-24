@@ -34,6 +34,8 @@ import {
   type WishesSectionData,
   type CountdownSectionData,
   type ProfilesSectionData,
+  type ScratchCardSectionData,
+  type ScratchCard,
   type RevealAnim,
 } from "@/lib/siteStore";
 import { useServerFn } from "@tanstack/react-start";
@@ -197,6 +199,7 @@ function SectionsTab({ site }: { site: SiteState }) {
       case "music": next = { ...base, kind: "music", title: "Our Song", url: "", trackTitle: "", artist: "", loop: true, display: "card" } as MusicSectionData; break;
       case "wishes": next = { ...base, kind: "wishes", title: "Leave a Wish", prompt: "Your words become part of our forever." } as WishesSectionData; break;
       case "contacts": next = { ...base, kind: "contacts", title: "Contact", contacts: [] } as ContactsSectionData; break;
+      case "scratchcard": next = { ...base, kind: "scratchcard", title: "Scratch to reveal", prompt: "A little surprise for you.", brushSize: 28, revealThreshold: 0.55, cards: [{ id: uid(), label: "Surprise", revealTitle: "You're invited!", revealMessage: "Scratch the surface to see our message.", coverColor: "#b08a4f", coverText: "SCRATCH HERE" }] } as ScratchCardSectionData; break;
       default: return;
     }
     setState((s) => ({ ...s, sections: [...s.sections, next] }));
@@ -228,7 +231,7 @@ function SectionsTab({ site }: { site: SiteState }) {
         <details className="bg-slate-900 rounded-lg p-3">
           <summary className="cursor-pointer text-sm">+ Add section</summary>
           <div className="grid grid-cols-2 gap-2 mt-3">
-            {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","music","wishes","contacts"] as Section["kind"][]).map(k => (
+            {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","music","wishes","contacts","scratchcard"] as Section["kind"][]).map(k => (
               <button key={k} onClick={() => add(k)} className="p-2 text-xs rounded bg-slate-800 hover:bg-slate-700 capitalize">{k}</button>
             ))}
           </div>
@@ -296,6 +299,7 @@ function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { 
       {section.kind === "music" && <MusicEditor section={section} onChange={onChange as (p: Partial<MusicSectionData>) => void} />}
       {section.kind === "wishes" && <Field label="Prompt"><input className={inputCls} value={section.prompt ?? ""} onChange={(e) => onChange({ prompt: e.target.value })} /></Field>}
       {section.kind === "contacts" && <ContactsEditor section={section} onChange={onChange as (p: Partial<ContactsSectionData>) => void} />}
+      {section.kind === "scratchcard" && <ScratchCardEditor section={section} onChange={onChange as (p: Partial<ScratchCardSectionData>) => void} />}
     </div>
   );
 }
