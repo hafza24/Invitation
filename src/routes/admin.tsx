@@ -63,7 +63,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 bg-slate-950 text-slate-100">
+    <main className="min-h-dvh flex items-center justify-center p-5 sm:p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -74,14 +74,40 @@ function Login({ onLogin }: { onLogin: () => void }) {
           if (ok) onLogin();
           else setErr("Wrong password");
         }}
-        className="w-full max-w-sm space-y-4 p-8 rounded-2xl bg-slate-900 border border-slate-800"
+        aria-labelledby="admin-login-title"
+        className="w-full max-w-sm space-y-5 p-7 sm:p-8 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800 shadow-2xl shadow-black/40"
       >
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-slate-400">Default password: <code>admin123</code> (set <code>ADMIN_PASSWORD</code> in backend secrets)</p>
-        <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" className="w-full p-3 rounded-lg bg-slate-800 border border-slate-700" />
-        {err && <p className="text-sm text-red-400">{err}</p>}
-        <button disabled={busy} className="w-full p-3 rounded-lg bg-amber-500 text-slate-950 font-medium disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button>
-        <Link to="/" className="text-xs text-slate-400 underline block text-center">← Back to site</Link>
+        <div className="space-y-1">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300/80">Event Studio</p>
+          <h1 id="admin-login-title" className="text-2xl font-semibold tracking-tight">Sign in</h1>
+          <p className="text-sm text-slate-400">Enter your admin password to continue.</p>
+        </div>
+        <label className="block space-y-1.5">
+          <span className="text-xs uppercase tracking-wider text-slate-400">Password</span>
+          <input
+            type="password"
+            autoFocus
+            autoComplete="current-password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            placeholder="••••••••"
+            aria-invalid={!!err}
+            aria-describedby={err ? "admin-login-error" : undefined}
+            className="w-full p-3 rounded-lg bg-slate-800/80 border border-slate-700 placeholder:text-slate-500 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 outline-none transition"
+          />
+        </label>
+        {err && <p id="admin-login-error" role="alert" className="text-sm text-red-400">{err}</p>}
+        <button
+          type="submit"
+          disabled={busy || !pw}
+          className="w-full p-3 rounded-lg bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {busy ? "Signing in…" : "Sign in"}
+        </button>
+        <p className="text-xs text-slate-500 text-center">
+          Default password <code className="text-slate-400">admin123</code> — override with the <code className="text-slate-400">ADMIN_PASSWORD</code> backend secret.
+        </p>
+        <Link to="/" className="text-xs text-slate-400 hover:text-slate-200 underline block text-center">← Back to site</Link>
       </form>
     </main>
   );
