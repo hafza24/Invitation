@@ -42,7 +42,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { listWishes } from "@/lib/wishes.functions";
 
 export const Route = createFileRoute("/admin")({
-  head: () => ({ meta: [{ title: "Admin · Event Platform" }] }),
+  head: () => ({
+    meta: [
+      { title: "Admin · Event Platform" },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
   component: AdminPage,
 });
 
