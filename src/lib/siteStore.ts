@@ -691,6 +691,8 @@ export async function saveNow() {
   await flushSave();
 }
 
+const SERVER_SNAPSHOT: SiteState = blankState();
+
 export function useSite(): SiteState {
   return useSyncExternalStore(
     (cb) => {
@@ -702,7 +704,7 @@ export function useSite(): SiteState {
       ensureHydrated();
       return state;
     },
-    () => blankState(),
+    () => SERVER_SNAPSHOT,
   );
 }
 
