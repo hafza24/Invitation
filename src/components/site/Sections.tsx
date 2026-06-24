@@ -81,12 +81,14 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
               mode="letter"
               delay={0.4}
               duration={1}
-              className="block text-[15vw] sm:text-[10vw] md:text-[8vw] leading-none"
+              className="block leading-[0.95]"
+              style={{ fontSize: "clamp(2.75rem, 11vw, 9rem)" }}
             />
             <Reveal anim="fade-in" delay={1.6}>
               <div
-                className="text-3xl sm:text-5xl my-2 opacity-90"
-                style={{ color: "var(--primary)", fontFamily: "'Great Vibes', cursive" }}
+                className="my-2 opacity-90"
+                style={{ color: "var(--primary)", fontFamily: "'Great Vibes', cursive", fontSize: "clamp(1.75rem, 5vw, 3.5rem)" }}
+                aria-hidden="true"
               >
                 {data.separator || "&"}
               </div>
@@ -96,7 +98,8 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
               mode="letter"
               delay={1.8}
               duration={1}
-              className="block text-[15vw] sm:text-[10vw] md:text-[8vw] leading-none"
+              className="block leading-[0.95]"
+              style={{ fontSize: "clamp(2.75rem, 11vw, 9rem)" }}
             />
           </div>
         ) : (
@@ -106,7 +109,8 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
               mode="letter"
               delay={0.4}
               duration={1}
-              className="block text-[15vw] sm:text-[10vw] md:text-[8vw] leading-none"
+              className="block leading-[0.95]"
+              style={{ fontSize: "clamp(2.75rem, 11vw, 9rem)" }}
             />
           )
         )}
