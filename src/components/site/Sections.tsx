@@ -14,6 +14,8 @@ import type {
   MusicSectionData,
   WishesSectionData,
   ContactsSectionData,
+  ScratchCardSectionData,
+  ScratchCard,
 } from "@/lib/siteStore";
 import { Reveal, RevealText } from "./Reveal";
 import { BackgroundLayer } from "./BackgroundLayer";
@@ -568,6 +570,191 @@ function MusicBlock({ data, fallback }: { data: MusicSectionData; fallback?: Bac
   );
 }
 
+// ============ SCRATCH CARD ============
+
+function ScratchCardItem({
+  card,
+  brushSize = 28,
+  threshold = 0.55,
+}: {
+  card: ScratchCard;
+  brushSize?: number;
+  threshold?: number;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const drawing = useRef(false);
+  const [revealed, setRevealed] = useState(false);
+
+  const paintCover = () => {
+    const canvas = canvasRef.current;
+    const wrap = wrapRef.current;
+    if (!canvas || !wrap) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const { width, height } = wrap.getBoundingClientRect();
+    canvas.width = Math.floor(width * dpr);
+    canvas.height = Math.floor(height * dpr);
+    canvas.style.width = `${width}px`;
+    canvas.style.height = `${height}px`;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+    const paint = () => {
+      // Base color
+      ctx.fillStyle = card.coverColor || "#b08a4f";
+      ctx.fillRect(0, 0, width, height);
+      // subtle gradient sheen
+      const g = ctx.createLinearGradient(0, 0, width, height);
+      g.addColorStop(0, "rgba(255,255,255,0.18)");
+      g.addColorStop(0.5, "rgba(255,255,255,0)");
+      g.addColorStop(1, "rgba(0,0,0,0.18)");
+      ctx.fillStyle = g;
+      ctx.fillRect(0, 0, width, height);
+      if (card.coverText) {
+        ctx.fillStyle = "rgba(255,255,255,0.85)";
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.font = `600 ${Math.max(14, Math.min(width, height) * 0.09)}px var(--font-body, system-ui)`;
+        ctx.fillText(card.coverText, width / 2, height / 2);
+      }
+      ctx.globalCompositeOperation = "destination-out";
+    };
+    if (card.coverImage) {
+      const img = new Image();
+      img.crossOrigin = "anonymous";
+      img.onload = () => {
+        ctx.drawImage(img, 0, 0, width, height);
+        ctx.globalCompositeOperation = "destination-out";
+      };
+      img.onerror = paint;
+      img.src = card.coverImage;
+    } else {
+      paint();
+    }
+  };
+
+  useEffect(() => {
+    paintCover();
+    const onResize = () => {
+      if (!revealed) paintCover();
+    };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [card.coverColor, card.coverImage, card.coverText]);
+
+  const pointAt = (e: React.PointerEvent) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return null;
+    const r = canvas.getBoundingClientRect();
+    return { x: e.clientX - r.left, y: e.clientY - r.top };
+  };
+
+  const scratch = (e: React.PointerEvent) => {
+    if (!drawing.current || revealed) return;
+    const ctx = canvasRef.current?.getContext("2d");
+    const p = pointAt(e);
+    if (!ctx || !p) return;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, brushSize, 0, Math.PI * 2);
+    ctx.fill();
+  };
+
+  const checkReveal = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    const { width, height } = canvas;
+    const sampleW = 60;
+    const sampleH = 60;
+    const data = ctx.getImageData(0, 0, width, height).data;
+    let cleared = 0;
+    const step = Math.max(1, Math.floor((width * height) / (sampleW * sampleH)));
+    let total = 0;
+    for (let i = 3; i < data.length; i += 4 * step) {
+      total++;
+      if (data[i] === 0) cleared++;
+    }
+    if (cleared / total >= threshold) setRevealed(true);
+  };
+
+  return (
+    <div
+      ref={wrapRef}
+      className="relative rounded-2xl overflow-hidden select-none"
+      style={{
+        aspectRatio: "4/3",
+        background: "color-mix(in oklab, var(--card) 85%, transparent)",
+        border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)",
+        boxShadow: "0 20px 60px -20px color-mix(in oklab, var(--primary) 40%, transparent)",
+      }}
+    >
+      {/* Reveal layer */}
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-6">
+        {card.revealImage && (
+          <img src={card.revealImage} alt="" className="max-h-[60%] object-contain mb-3 rounded-lg" />
+        )}
+        {card.revealTitle && (
+          <h3 className="text-3xl sm:text-4xl mb-2" style={{ fontFamily: "var(--font-heading)", color: "var(--primary)" }}>
+            {card.revealTitle}
+          </h3>
+        )}
+        {card.revealMessage && <p className="opacity-85 max-w-md">{card.revealMessage}</p>}
+      </div>
+      {/* Scratch canvas */}
+      <canvas
+        ref={canvasRef}
+        className={`absolute inset-0 touch-none transition-opacity duration-500 ${revealed ? "opacity-0 pointer-events-none" : "cursor-grab active:cursor-grabbing"}`}
+        onPointerDown={(e) => { (e.target as Element).setPointerCapture(e.pointerId); drawing.current = true; scratch(e); }}
+        onPointerMove={scratch}
+        onPointerUp={() => { drawing.current = false; checkReveal(); }}
+        onPointerLeave={() => { drawing.current = false; }}
+      />
+      {card.label && (
+        <span className="absolute top-3 left-3 text-xs uppercase tracking-[0.3em] opacity-80 px-2 py-1 rounded" style={{ background: "color-mix(in oklab, var(--background) 60%, transparent)" }}>
+          {card.label}
+        </span>
+      )}
+      {!revealed && (
+        <button
+          onClick={() => setRevealed(true)}
+          className="absolute bottom-3 right-3 text-xs px-3 py-1.5 rounded-full"
+          style={{ background: "color-mix(in oklab, var(--background) 70%, transparent)", color: "var(--text)" }}
+        >
+          Reveal
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ScratchCardBlock({ data, fallback }: { data: ScratchCardSectionData; fallback?: BackgroundConfig }) {
+  return (
+    <Wrap bg={data.background} fallback={fallback}>
+      <div className="text-center mb-12">
+        {data.title && (
+          <Reveal anim="fade-up">
+            <h2 className="text-5xl sm:text-6xl mb-4" style={{ fontFamily: "var(--font-heading)" }}>{data.title}</h2>
+          </Reveal>
+        )}
+        {data.prompt && (
+          <Reveal anim="fade-up" delay={0.1}>
+            <p className="opacity-80 italic max-w-2xl mx-auto">{data.prompt}</p>
+          </Reveal>
+        )}
+      </div>
+      <div className={`grid gap-6 ${data.cards.length === 1 ? "max-w-xl mx-auto" : "md:grid-cols-2 lg:grid-cols-3"}`}>
+        {data.cards.map((c, i) => (
+          <Reveal key={c.id} anim="zoom-in" delay={i * 0.1}>
+            <ScratchCardItem card={c} brushSize={data.brushSize ?? 28} threshold={data.revealThreshold ?? 0.55} />
+          </Reveal>
+        ))}
+      </div>
+    </Wrap>
+  );
+}
+
 // ============ DISPATCH ============
 
 function renderBlock(section: Section, fallback?: BackgroundConfig) {
@@ -583,6 +770,7 @@ function renderBlock(section: Section, fallback?: BackgroundConfig) {
     case "music": return <MusicBlock data={section} fallback={fallback} />;
     case "wishes": return <WishesBlock data={section} fallback={fallback} />;
     case "contacts": return <ContactsBlock data={section} fallback={fallback} />;
+    case "scratchcard": return <ScratchCardBlock data={section} fallback={fallback} />;
     default: return null;
   }
 }
