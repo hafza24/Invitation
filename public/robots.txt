@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+
+Sitemap: https://story-scroll-suite.lovable.app/sitemap.xml
