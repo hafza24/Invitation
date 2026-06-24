@@ -87,7 +87,7 @@ function FirstRun() {
 
   return (
     <main
-      className="min-h-screen relative overflow-hidden flex items-center justify-center px-6 py-10"
+      className="min-h-dvh relative overflow-hidden flex items-center justify-center px-5 sm:px-6 py-10"
       style={{ background: "oklch(0.11 0.02 270)", color: "oklch(0.96 0.02 90)" }}
     >
       {/* Ambient aurora */}
