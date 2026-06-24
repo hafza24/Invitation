@@ -593,6 +593,47 @@ function ContactsEditor({ section, onChange }: { section: ContactsSectionData; o
   );
 }
 
+function ScratchCardEditor({ section, onChange }: { section: ScratchCardSectionData; onChange: (p: Partial<ScratchCardSectionData>) => void }) {
+  const upd = (i: number, c: ScratchCard) => onChange({ cards: section.cards.map((x, j) => i === j ? c : x) });
+  const remove = (i: number) => onChange({ cards: section.cards.filter((_, j) => j !== i) });
+  const add = () => onChange({ cards: [...section.cards, { id: uid(), label: "Surprise", revealTitle: "Hidden message", revealMessage: "", coverColor: "#b08a4f", coverText: "SCRATCH HERE" }] });
+  return (
+    <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
+      <Field label="Prompt"><input className={inputCls} value={section.prompt ?? ""} onChange={(e) => onChange({ prompt: e.target.value })} /></Field>
+      <div className="grid grid-cols-2 gap-3">
+        <Field label="Brush size (px)">
+          <input type="number" min={8} max={80} className={inputCls} value={section.brushSize ?? 28} onChange={(e) => onChange({ brushSize: Number(e.target.value) || 28 })} />
+        </Field>
+        <Field label="Auto-reveal threshold (0–1)">
+          <input type="number" step={0.05} min={0.1} max={1} className={inputCls} value={section.revealThreshold ?? 0.55} onChange={(e) => onChange({ revealThreshold: Number(e.target.value) || 0.55 })} />
+        </Field>
+      </div>
+      <div className="space-y-3">
+        {section.cards.map((c, i) => (
+          <div key={c.id} className="p-4 rounded-lg bg-slate-900 border border-slate-800 space-y-2">
+            <div className="flex justify-between items-center">
+              <strong>{c.revealTitle || c.label || `Card ${i + 1}`}</strong>
+              <button onClick={() => remove(i)} className="text-red-400 text-xs">Remove</button>
+            </div>
+            <input className={inputCls} placeholder="Label (corner badge)" value={c.label ?? ""} onChange={(e) => upd(i, { ...c, label: e.target.value })} />
+            <input className={inputCls} placeholder="Reveal title" value={c.revealTitle ?? ""} onChange={(e) => upd(i, { ...c, revealTitle: e.target.value })} />
+            <textarea className={inputCls} rows={2} placeholder="Reveal message" value={c.revealMessage ?? ""} onChange={(e) => upd(i, { ...c, revealMessage: e.target.value })} />
+            <Field label="Reveal image (optional)"><ImageInput value={c.revealImage} onChange={(v) => upd(i, { ...c, revealImage: v })} /></Field>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Cover color">
+                <input type="color" className={inputCls + " h-11 p-1"} value={c.coverColor ?? "#b08a4f"} onChange={(e) => upd(i, { ...c, coverColor: e.target.value })} />
+              </Field>
+              <Field label="Cover text"><input className={inputCls} placeholder="SCRATCH HERE" value={c.coverText ?? ""} onChange={(e) => upd(i, { ...c, coverText: e.target.value })} /></Field>
+            </div>
+            <Field label="Cover image (overrides color)"><ImageInput value={c.coverImage} onChange={(v) => upd(i, { ...c, coverImage: v })} /></Field>
+          </div>
+        ))}
+        <button onClick={add} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add card</button>
+      </div>
+    </div>
+  );
+}
+
 // ============ Theme Tab ============
 
 function ThemeTab({ site }: { site: SiteState }) {
