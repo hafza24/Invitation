@@ -37,7 +37,7 @@ function Wrap({
 }) {
   return (
     <section
-      className={`relative min-h-screen w-full overflow-hidden flex items-center justify-center px-6 py-24 ${snap ? "snap-start" : ""} ${className}`}
+      className={`relative min-h-dvh w-full overflow-hidden flex items-center justify-center px-4 sm:px-6 py-20 sm:py-24 ${snap ? "snap-start" : ""} ${className}`}
     >
       <BackgroundLayer bg={bg} fallback={fallback} />
       <div className="relative z-10 w-full max-w-6xl mx-auto">{children}</div>
@@ -54,7 +54,7 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
 
   return (
-    <section ref={ref} className="relative min-h-screen flex items-center justify-center overflow-hidden px-6">
+    <section ref={ref} className="relative min-h-dvh flex items-center justify-center overflow-hidden px-4 sm:px-6">
       <BackgroundLayer bg={data.background} fallback={fallback} />
       <motion.div style={{ y, opacity }} className="relative z-10 text-center max-w-5xl">
         {data.eyebrow && (

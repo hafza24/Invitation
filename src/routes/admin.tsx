@@ -63,7 +63,7 @@ function Login({ onLogin }: { onLogin: () => void }) {
   const [err, setErr] = useState("");
   const [busy, setBusy] = useState(false);
   return (
-    <main className="min-h-screen flex items-center justify-center p-6 bg-slate-950 text-slate-100">
+    <main className="min-h-dvh flex items-center justify-center p-5 sm:p-6 bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-slate-100">
       <form
         onSubmit={async (e) => {
           e.preventDefault();
@@ -74,14 +74,40 @@ function Login({ onLogin }: { onLogin: () => void }) {
           if (ok) onLogin();
           else setErr("Wrong password");
         }}
-        className="w-full max-w-sm space-y-4 p-8 rounded-2xl bg-slate-900 border border-slate-800"
+        aria-labelledby="admin-login-title"
+        className="w-full max-w-sm space-y-5 p-7 sm:p-8 rounded-2xl bg-slate-900/70 backdrop-blur-xl border border-slate-800 shadow-2xl shadow-black/40"
       >
-        <h1 className="text-2xl font-semibold">Admin</h1>
-        <p className="text-sm text-slate-400">Default password: <code>admin123</code> (set <code>ADMIN_PASSWORD</code> in backend secrets)</p>
-        <input type="password" autoFocus value={pw} onChange={(e) => setPw(e.target.value)} placeholder="Password" className="w-full p-3 rounded-lg bg-slate-800 border border-slate-700" />
-        {err && <p className="text-sm text-red-400">{err}</p>}
-        <button disabled={busy} className="w-full p-3 rounded-lg bg-amber-500 text-slate-950 font-medium disabled:opacity-60">{busy ? "Signing in…" : "Sign in"}</button>
-        <Link to="/" className="text-xs text-slate-400 underline block text-center">← Back to site</Link>
+        <div className="space-y-1">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300/80">Event Studio</p>
+          <h1 id="admin-login-title" className="text-2xl font-semibold tracking-tight">Sign in</h1>
+          <p className="text-sm text-slate-400">Enter your admin password to continue.</p>
+        </div>
+        <label className="block space-y-1.5">
+          <span className="text-xs uppercase tracking-wider text-slate-400">Password</span>
+          <input
+            type="password"
+            autoFocus
+            autoComplete="current-password"
+            value={pw}
+            onChange={(e) => setPw(e.target.value)}
+            placeholder="••••••••"
+            aria-invalid={!!err}
+            aria-describedby={err ? "admin-login-error" : undefined}
+            className="w-full p-3 rounded-lg bg-slate-800/80 border border-slate-700 placeholder:text-slate-500 focus:border-amber-400 focus:ring-2 focus:ring-amber-400/30 outline-none transition"
+          />
+        </label>
+        {err && <p id="admin-login-error" role="alert" className="text-sm text-red-400">{err}</p>}
+        <button
+          type="submit"
+          disabled={busy || !pw}
+          className="w-full p-3 rounded-lg bg-amber-400 hover:bg-amber-300 active:bg-amber-500 text-slate-950 font-medium disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          {busy ? "Signing in…" : "Sign in"}
+        </button>
+        <p className="text-xs text-slate-500 text-center">
+          Default password <code className="text-slate-400">admin123</code> — override with the <code className="text-slate-400">ADMIN_PASSWORD</code> backend secret.
+        </p>
+        <Link to="/" className="text-xs text-slate-400 hover:text-slate-200 underline block text-center">← Back to site</Link>
       </form>
     </main>
   );
@@ -127,48 +153,93 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
     }
   }, [lastSavedAt, status, preview]);
 
+  const tabs: [Tab, string][] = [
+    ["sections", "Sections"],
+    ["theme", "Theme & Effects"],
+    ["wishes", "Wishes"],
+    ["settings", "Settings"],
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col md:flex-row bg-slate-950 text-slate-100">
-      <aside className="w-full md:w-64 md:min-h-screen border-b md:border-b-0 md:border-r border-slate-800 p-4 md:p-6 space-y-1">
-        <div className="mb-6">
-          <h1 className="text-xl font-semibold">Event Studio</h1>
-          <p className="text-xs text-slate-400">{site.meta.eventName || site.meta.eventType}</p>
+    <div className="min-h-dvh flex flex-col md:flex-row bg-slate-950 text-slate-100">
+      {/* Sidebar (desktop) / top bar (mobile) */}
+      <aside className="md:w-64 md:min-h-dvh md:border-r border-slate-800 md:p-6 md:space-y-1 md:sticky md:top-0 md:self-start bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-slate-950/70 z-20">
+        {/* Mobile top bar */}
+        <div className="md:hidden sticky top-0 border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+          <div className="min-w-0">
+            <h1 className="text-base font-semibold leading-tight truncate">Event Studio</h1>
+            <p className="text-[11px] text-slate-400 truncate">{site.meta.eventName || site.meta.eventType}</p>
+          </div>
+          <div className="shrink-0"><SyncIndicator /></div>
         </div>
-        {([
-          ["sections", "Sections"],
-          ["theme", "Theme & Effects"],
-          ["wishes", "Wishes"],
-          ["settings", "Settings"],
-        ] as [Tab, string][]).map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={`block w-full text-left px-3 py-2 rounded-lg text-sm ${tab === k ? "bg-amber-500/15 text-amber-300" : "hover:bg-slate-900"}`}>
-            {l}
-          </button>
-        ))}
-        <div className="pt-6 space-y-2">
+
+        {/* Desktop header */}
+        <div className="hidden md:block mb-6">
+          <h1 className="text-xl font-semibold tracking-tight">Event Studio</h1>
+          <p className="text-xs text-slate-400 truncate">{site.meta.eventName || site.meta.eventType}</p>
+        </div>
+
+        {/* Tabs */}
+        <nav
+          aria-label="Studio sections"
+          className="md:block flex gap-1 overflow-x-auto px-3 md:px-0 py-2 md:py-0 border-b md:border-b-0 border-slate-800 [-webkit-overflow-scrolling:touch]"
+        >
+          {tabs.map(([k, l]) => {
+            const active = tab === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setTab(k)}
+                aria-current={active ? "page" : undefined}
+                className={`shrink-0 md:block md:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
+                  active
+                    ? "bg-amber-500/15 text-amber-300"
+                    : "text-slate-300 hover:bg-slate-900 hover:text-slate-100"
+                }`}
+              >
+                {l}
+              </button>
+            );
+          })}
+        </nav>
+
+        {/* Desktop-only utility column */}
+        <div className="hidden md:block pt-6 space-y-2">
           <SyncIndicator />
           <button
+            type="button"
             onClick={() => setPreview((p) => !p)}
-            className={`block w-full text-left text-xs px-3 py-2 rounded-lg ${preview ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800"}`}
+            aria-pressed={preview}
+            className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-colors ${preview ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800 text-slate-300"}`}
           >
             {preview ? "✓ Live preview on" : "Show live preview"}
           </button>
-          <Link to="/" className="block text-xs text-slate-400 underline">View site →</Link>
-          <button onClick={onLogout} className="block text-xs text-slate-400 underline">Sign out</button>
+          <Link to="/" className="block text-xs text-slate-400 hover:text-slate-200 underline">View site →</Link>
+          <button type="button" onClick={onLogout} className="block text-xs text-slate-400 hover:text-slate-200 underline">Sign out</button>
         </div>
       </aside>
-      <main className={`flex-1 p-6 md:p-10 overflow-auto ${preview ? "max-w-2xl" : "max-w-5xl"}`}>
+
+      <main className={`flex-1 p-5 sm:p-6 md:p-10 overflow-auto ${preview ? "max-w-2xl" : "max-w-5xl"}`}>
         {tab === "sections" && <SectionsTab site={site} />}
         {tab === "theme" && <ThemeTab site={site} />}
         {tab === "wishes" && <WishesTab />}
         {tab === "settings" && <SettingsTab site={site} />}
+
+        {/* Mobile footer actions */}
+        <div className="md:hidden mt-10 pt-6 border-t border-slate-800 flex flex-wrap items-center gap-x-5 gap-y-3 text-xs text-slate-400">
+          <Link to="/" className="underline hover:text-slate-200">View site →</Link>
+          <button type="button" onClick={onLogout} className="underline hover:text-slate-200">Sign out</button>
+        </div>
       </main>
+
       {preview && (
         <aside className="hidden lg:flex flex-col w-[480px] xl:w-[560px] border-l border-slate-800 bg-slate-900/40">
           <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 text-xs">
             <span className="text-slate-400">Live preview</span>
             <div className="flex gap-2">
-              <button onClick={() => setPreviewKey((k) => k + 1)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Refresh</button>
-              <a href="/" target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700">Open ↗</a>
+              <button type="button" onClick={() => setPreviewKey((k) => k + 1)} className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">Refresh</button>
+              <a href="/" target="_blank" rel="noreferrer" className="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">Open ↗</a>
             </div>
           </div>
           <iframe
