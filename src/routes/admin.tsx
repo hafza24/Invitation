@@ -270,12 +270,12 @@ function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { 
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h3 className="text-lg font-semibold capitalize">{section.kind}</h3>
         <div className="flex gap-2 text-xs">
-          <button onClick={onMoveUp} className="px-3 py-1.5 rounded bg-slate-800">↑</button>
-          <button onClick={onMoveDown} className="px-3 py-1.5 rounded bg-slate-800">↓</button>
-          <label className="px-3 py-1.5 rounded bg-slate-800 flex items-center gap-2 cursor-pointer">
+          <button onClick={onMoveUp} aria-label="Move section up" title="Move up" className="min-h-11 min-w-11 px-3 rounded bg-slate-800 hover:bg-slate-700">↑</button>
+          <button onClick={onMoveDown} aria-label="Move section down" title="Move down" className="min-h-11 min-w-11 px-3 rounded bg-slate-800 hover:bg-slate-700">↓</button>
+          <label className="min-h-11 px-3 rounded bg-slate-800 hover:bg-slate-700 flex items-center gap-2 cursor-pointer">
             <input type="checkbox" checked={section.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} /> Enabled
           </label>
-          <button onClick={onDelete} className="px-3 py-1.5 rounded bg-red-600/80">Delete</button>
+          <button onClick={onDelete} aria-label="Delete section" className="min-h-11 px-3 rounded bg-red-600/80 hover:bg-red-600">Delete</button>
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">

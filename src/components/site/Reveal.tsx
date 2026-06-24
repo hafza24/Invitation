@@ -55,6 +55,7 @@ export function RevealText({
   text,
   mode = "letter",
   className,
+  style,
   delay = 0,
   stagger = 0.04,
   duration = 0.8,
@@ -62,6 +63,7 @@ export function RevealText({
   text: string;
   mode?: "letter" | "word";
   className?: string;
+  style?: React.CSSProperties;
   delay?: number;
   stagger?: number;
   duration?: number;
@@ -70,6 +72,7 @@ export function RevealText({
   return (
     <motion.span
       className={className}
+      style={style}
       initial="hidden"
       whileInView="show"
       viewport={{ once: true, amount: 0.4 }}

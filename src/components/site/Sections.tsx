@@ -81,12 +81,14 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
               mode="letter"
               delay={0.4}
               duration={1}
-              className="block text-[15vw] sm:text-[10vw] md:text-[8vw] leading-none"
+              className="block leading-[0.95]"
+              style={{ fontSize: "clamp(2.75rem, 11vw, 9rem)" }}
             />
             <Reveal anim="fade-in" delay={1.6}>
               <div
-                className="text-3xl sm:text-5xl my-2 opacity-90"
-                style={{ color: "var(--primary)", fontFamily: "'Great Vibes', cursive" }}
+                className="my-2 opacity-90"
+                style={{ color: "var(--primary)", fontFamily: "'Great Vibes', cursive", fontSize: "clamp(1.75rem, 5vw, 3.5rem)" }}
+                aria-hidden="true"
               >
                 {data.separator || "&"}
               </div>
@@ -96,7 +98,8 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
               mode="letter"
               delay={1.8}
               duration={1}
-              className="block text-[15vw] sm:text-[10vw] md:text-[8vw] leading-none"
+              className="block leading-[0.95]"
+              style={{ fontSize: "clamp(2.75rem, 11vw, 9rem)" }}
             />
           </div>
         ) : (
@@ -106,7 +109,8 @@ function HeroBlock({ data, fallback }: { data: HeroSectionData; fallback?: Backg
               mode="letter"
               delay={0.4}
               duration={1}
-              className="block text-[15vw] sm:text-[10vw] md:text-[8vw] leading-none"
+              className="block leading-[0.95]"
+              style={{ fontSize: "clamp(2.75rem, 11vw, 9rem)" }}
             />
           )
         )}
@@ -197,7 +201,7 @@ function ChapterBlock({ data, fallback }: { data: ChapterSectionData; fallback?:
     <Wrap bg={data.background} fallback={fallback}>
       <div className={`grid ${data.image && !isCenter ? "md:grid-cols-2" : "grid-cols-1"} gap-12 items-center`}>
         {data.image && data.layout === "left" && (
-          <Reveal anim="fade-left"><img src={data.image} alt="" className="rounded-2xl w-full" /></Reveal>
+          <Reveal anim="fade-left"><img src={data.image} alt={data.title || data.subtitle || ""} loading="lazy" className="rounded-2xl w-full" /></Reveal>
         )}
         <div className={isCenter ? "text-center max-w-3xl mx-auto" : ""}>
           {data.subtitle && (
@@ -207,22 +211,22 @@ function ChapterBlock({ data, fallback }: { data: ChapterSectionData; fallback?:
           )}
           {data.title && (
             <Reveal anim={data.anim || "letter"} delay={0.1}>
-              <h2 className="text-5xl sm:text-7xl mb-6" style={{ fontFamily: "var(--font-heading)" }}>
+              <h2 className="mb-6" style={{ fontFamily: "var(--font-heading)", fontSize: "clamp(2.25rem, 6vw, 5rem)", lineHeight: 1.05 }}>
                 {data.anim === "letter" || !data.anim ? <RevealText text={data.title} mode="letter" /> : data.title}
               </h2>
             </Reveal>
           )}
           {data.body && (
             <Reveal anim="fade-up" delay={0.4}>
-              <p className="text-lg sm:text-xl opacity-80 leading-relaxed" style={{ fontFamily: "var(--font-body)" }}>{data.body}</p>
+              <p className="opacity-80 leading-relaxed" style={{ fontFamily: "var(--font-body)", fontSize: "clamp(1rem, 1.6vw, 1.25rem)" }}>{data.body}</p>
             </Reveal>
           )}
         </div>
         {data.image && data.layout === "right" && (
-          <Reveal anim="fade-right"><img src={data.image} alt="" className="rounded-2xl w-full" /></Reveal>
+          <Reveal anim="fade-right"><img src={data.image} alt={data.title || data.subtitle || ""} loading="lazy" className="rounded-2xl w-full" /></Reveal>
         )}
         {data.image && isCenter && (
-          <Reveal anim="zoom-in" delay={0.3}><img src={data.image} alt="" className="rounded-2xl w-full max-w-3xl mx-auto mt-8" /></Reveal>
+          <Reveal anim="zoom-in" delay={0.3}><img src={data.image} alt={data.title || data.subtitle || ""} loading="lazy" className="rounded-2xl w-full max-w-3xl mx-auto mt-8" /></Reveal>
         )}
       </div>
     </Wrap>
@@ -437,42 +441,52 @@ function WishesBlock({ data, fallback }: { data: WishesSectionData; fallback?: B
         ) : (
           <Reveal anim="fade-up" delay={0.2}>
             <form onSubmit={submit} className="space-y-4 text-left">
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
-                className="w-full p-4 rounded-lg bg-transparent"
-                style={{ border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)" }}
-                maxLength={100}
-                required
-              />
-              <select
-                value={type}
-                onChange={(e) => setType(e.target.value)}
-                className="w-full p-4 rounded-lg bg-transparent"
-                style={{ border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)" }}
-              >
-                <option value="wish">A wish</option>
-                <option value="advice">Advice</option>
-                <option value="dua">A dua / prayer</option>
-                <option value="message">A message</option>
-                <option value="remark">A remark</option>
-              </select>
-              <textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Your words..."
-                rows={5}
-                className="w-full p-4 rounded-lg bg-transparent"
-                style={{ border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)" }}
-                maxLength={2000}
-                required
-              />
-              {error && <p className="text-sm" style={{ color: "tomato" }}>{error}</p>}
+              <label className="block">
+                <span className="block text-xs uppercase tracking-[0.25em] opacity-70 mb-1.5">Your name</span>
+                <input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Sara Ahmed"
+                  className="w-full p-4 rounded-lg bg-transparent min-h-11"
+                  style={{ border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)" }}
+                  maxLength={100}
+                  required
+                  autoComplete="name"
+                />
+              </label>
+              <label className="block">
+                <span className="block text-xs uppercase tracking-[0.25em] opacity-70 mb-1.5">Type</span>
+                <select
+                  value={type}
+                  onChange={(e) => setType(e.target.value)}
+                  className="w-full p-4 rounded-lg bg-transparent min-h-11"
+                  style={{ border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)" }}
+                >
+                  <option value="wish">A wish</option>
+                  <option value="advice">Advice</option>
+                  <option value="dua">A dua / prayer</option>
+                  <option value="message">A message</option>
+                  <option value="remark">A remark</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="block text-xs uppercase tracking-[0.25em] opacity-70 mb-1.5">Your words</span>
+                <textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Write from the heart…"
+                  rows={5}
+                  className="w-full p-4 rounded-lg bg-transparent"
+                  style={{ border: "1px solid color-mix(in oklab, var(--primary) 30%, transparent)" }}
+                  maxLength={2000}
+                  required
+                />
+              </label>
+              {error && <p role="alert" className="text-sm" style={{ color: "tomato" }}>{error}</p>}
               <button
                 type="submit"
                 disabled={submitting}
-                className="w-full p-4 rounded-lg font-medium uppercase tracking-[0.2em] text-sm transition-opacity disabled:opacity-50"
+                className="w-full p-4 rounded-lg font-medium uppercase tracking-[0.2em] text-sm transition-opacity disabled:opacity-50 min-h-12"
                 style={{ background: "var(--primary)", color: "var(--background)" }}
               >
                 {submitting ? "Sending..." : "Send with love"}

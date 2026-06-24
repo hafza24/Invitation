@@ -82,9 +82,34 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     overflow-x: hidden;
+    text-rendering: optimizeLegibility;
   }
   ::selection { background: var(--gold); color: var(--background); }
+
+  /* Accessible focus ring on every interactive control */
+  :where(a, button, input, select, textarea, [role="button"], [tabindex]):focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Ensure icon-only / small admin controls reach a comfortable tap size */
+  @media (pointer: coarse) {
+    :where(button, [role="button"], a.btn, label.btn) { min-height: 44px; }
+  }
+
+  /* Respect users who prefer reduced motion */
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+    html { scroll-behavior: auto; }
+  }
 }
+
 
 @layer utilities {
   .font-display { font-family: var(--font-display); }
