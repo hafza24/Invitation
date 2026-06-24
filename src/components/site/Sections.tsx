@@ -37,7 +37,7 @@ function Wrap({
 }) {
   return (
     <section
-      className={`relative min-h-screen w-full overflow-hidden flex items-center justify-center px-6 py-24 ${snap ? "snap-start" : ""} ${className}`}
+      className={`relative min-h-dvh w-full overflow-hidden flex items-center justify-center px-4 sm:px-6 py-20 sm:py-24 ${snap ? "snap-start" : ""} ${className}`}
     >
       <BackgroundLayer bg={bg} fallback={fallback} />
       <div className="relative z-10 w-full max-w-6xl mx-auto">{children}</div>
