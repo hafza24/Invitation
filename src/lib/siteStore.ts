@@ -29,7 +29,8 @@ export type SectionKind =
   | "video"
   | "music"
   | "wishes"
-  | "contacts";
+  | "contacts"
+  | "scratchcard";
 
 export interface SectionBase {
   id: string;
@@ -169,6 +170,25 @@ export interface ContactsSectionData extends SectionBase {
   contacts: Contact[];
 }
 
+export interface ScratchCard {
+  id: string;
+  label?: string;
+  revealTitle?: string;
+  revealMessage?: string;
+  revealImage?: string;
+  coverColor?: string;
+  coverImage?: string;
+  coverText?: string;
+}
+
+export interface ScratchCardSectionData extends SectionBase {
+  kind: "scratchcard";
+  prompt?: string;
+  brushSize?: number;
+  revealThreshold?: number; // 0-1, % scratched before auto-reveal
+  cards: ScratchCard[];
+}
+
 export type Section =
   | HeroSectionData
   | CountdownSectionData
@@ -180,7 +200,8 @@ export type Section =
   | VideoSectionData
   | MusicSectionData
   | WishesSectionData
-  | ContactsSectionData;
+  | ContactsSectionData
+  | ScratchCardSectionData;
 
 // ============ Theme ============
 
