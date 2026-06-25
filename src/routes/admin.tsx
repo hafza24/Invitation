@@ -138,6 +138,26 @@ function SyncIndicator() {
   );
 }
 
+function ValidationBanner() {
+  const { count, messages } = useValidationSnapshot();
+  useEffect(() => {
+    setSaveBlocked(count > 0, count > 0 ? `${count} field${count === 1 ? "" : "s"} need${count === 1 ? "s" : ""} attention` : null);
+    return () => setSaveBlocked(false);
+  }, [count]);
+  if (count === 0) return null;
+  return (
+    <div role="alert" className="mb-5 rounded-xl border border-red-500/40 bg-red-500/10 p-4 text-sm text-red-100">
+      <p className="font-medium">
+        Changes paused — {count} field{count === 1 ? "" : "s"} need{count === 1 ? "s" : ""} attention before saving.
+      </p>
+      <ul className="mt-2 list-disc list-inside text-xs text-red-200/90 space-y-0.5 max-h-32 overflow-auto">
+        {messages.slice(0, 8).map((m, i) => <li key={i}>{m}</li>)}
+        {messages.length > 8 && <li>…and {messages.length - 8} more</li>}
+      </ul>
+    </div>
+  );
+}
+
 type Tab = "theme" | "sections" | "wishes" | "settings";
 
 function Dashboard({ onLogout }: { onLogout: () => void }) {
