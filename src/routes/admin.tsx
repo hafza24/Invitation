@@ -1005,9 +1005,9 @@ function SettingsTab({ site }: { site: SiteState }) {
   return (
     <div className="space-y-4 max-w-xl">
       <h2 className="text-lg font-semibold">Settings</h2>
-      <Field label="Event type"><input className={inputCls} value={site.meta.eventType} onChange={(e) => update({ eventType: e.target.value })} /></Field>
-      <Field label="Event name"><input className={inputCls} value={site.meta.eventName} onChange={(e) => update({ eventName: e.target.value })} /></Field>
-      <Field label="Tagline"><input className={inputCls} value={site.meta.tagline ?? ""} onChange={(e) => update({ tagline: e.target.value })} /></Field>
+      <ValidatedInput label="Event type" value={site.meta.eventType} onChange={(val) => update({ eventType: val })} validator={[v.required("Event type"), v.maxLen("Event type", 80)]} />
+      <ValidatedInput label="Event name" value={site.meta.eventName} onChange={(val) => update({ eventName: val })} validator={[v.required("Event name"), v.maxLen("Event name", 120)]} />
+      <ValidatedInput label="Tagline" value={site.meta.tagline ?? ""} onChange={(val) => update({ tagline: val })} validator={v.maxLen("Tagline", 200)} hint="Optional — shown under the event name." />
       <p className="text-xs text-slate-400">Admin access is gated by the <code>ADMIN_PASSWORD</code> backend secret. It is never stored in the public site config.</p>
 
       <div className="flex gap-2 pt-4">
