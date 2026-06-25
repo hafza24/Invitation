@@ -245,6 +245,7 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
       </aside>
 
       <main className={`flex-1 p-5 sm:p-6 md:p-10 overflow-auto ${preview ? "max-w-2xl" : "max-w-5xl"}`}>
+        <ValidationBanner />
         {tab === "sections" && <SectionsTab site={site} />}
         {tab === "theme" && <ThemeTab site={site} />}
         {tab === "wishes" && <WishesTab />}
