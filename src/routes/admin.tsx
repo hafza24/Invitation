@@ -603,13 +603,15 @@ function HeroEditor({ section, onChange }: { section: HeroSectionData; onChange:
             <option value="single">Single person</option>
           </select>
         </Field>
-        <Field label="Eyebrow"><input className={inputCls} value={section.eyebrow ?? ""} onChange={(e) => onChange({ eyebrow: e.target.value })} /></Field>
+        <ValidatedInput label="Eyebrow" value={section.eyebrow ?? ""} onChange={(val) => onChange({ eyebrow: val })} validator={v.maxLen("Eyebrow", 60)} />
       </div>
-      <Field label="Tagline"><input className={inputCls} value={section.tagline ?? ""} onChange={(e) => onChange({ tagline: e.target.value })} /></Field>
-      <Field label="Story"><textarea className={inputCls} rows={2} value={section.story ?? ""} onChange={(e) => onChange({ story: e.target.value })} /></Field>
+      <ValidatedInput label="Tagline" value={section.tagline ?? ""} onChange={(val) => onChange({ tagline: val })} validator={v.maxLen("Tagline", 200)} />
+      <Field label="Story" error={useFieldError(section.story ?? "", v.maxLen("Story", 600))}>
+        <textarea className={inputCls} rows={2} value={section.story ?? ""} onChange={(e) => onChange({ story: e.target.value })} />
+      </Field>
       {section.mode === "couple" ? (
         <>
-          <Field label="Separator"><input className={inputCls} value={section.separator ?? "&"} onChange={(e) => onChange({ separator: e.target.value })} /></Field>
+          <ValidatedInput label="Separator" value={section.separator ?? "&"} onChange={(val) => onChange({ separator: val })} validator={v.maxLen("Separator", 12)} />
           <div className="grid md:grid-cols-2 gap-4">
             <PersonEditor label="Bride / Partner 1" p={section.bride ?? { name: "" }} onChange={(p) => onChange({ bride: p })} />
             <PersonEditor label="Groom / Partner 2" p={section.groom ?? { name: "" }} onChange={(p) => onChange({ groom: p })} />
@@ -624,15 +626,23 @@ function HeroEditor({ section, onChange }: { section: HeroSectionData; onChange:
 
 type PersonLike = { name: string; photo?: string; relation?: string; description?: string; personality?: string; remark?: string };
 function PersonEditor({ label, p, onChange }: { label: string; p: PersonLike; onChange: (p: PersonLike) => void }) {
+  const nameErr = useFieldError(p.name, [v.required(`${label} name`), v.maxLen("Name", 80)]);
+  const descErr = useFieldError(p.description ?? "", v.maxLen("Description", 400));
   return (
     <div className="space-y-2 p-3 rounded-lg bg-slate-950/50 border border-slate-800">
       <p className="text-xs uppercase tracking-wider text-amber-400">{label}</p>
-      <input className={inputCls} placeholder="Name" value={p.name} onChange={(e) => onChange({ ...p, name: e.target.value })} />
-      <input className={inputCls} placeholder="Relation (e.g. Daughter of...)" value={p.relation ?? ""} onChange={(e) => onChange({ ...p, relation: e.target.value })} />
+      <div className="space-y-1">
+        <input className={`${inputCls} ${nameErr ? "border-red-500/60" : ""}`} placeholder="Name" aria-invalid={!!nameErr} aria-label={`${label} name`} value={p.name} onChange={(e) => onChange({ ...p, name: e.target.value })} />
+        {nameErr && <span role="alert" className="block text-xs text-red-400">{nameErr}</span>}
+      </div>
+      <ValidatedBareInput value={p.relation ?? ""} onChange={(val) => onChange({ ...p, relation: val })} placeholder="Relation (e.g. Daughter of...)" validator={v.maxLen("Relation", 120)} />
       <ImageInput value={p.photo} onChange={(v) => onChange({ ...p, photo: v })} />
-      <textarea className={inputCls} rows={2} placeholder="Description" value={p.description ?? ""} onChange={(e) => onChange({ ...p, description: e.target.value })} />
-      <input className={inputCls} placeholder="Personality" value={p.personality ?? ""} onChange={(e) => onChange({ ...p, personality: e.target.value })} />
-      <input className={inputCls} placeholder="Remark / quote" value={p.remark ?? ""} onChange={(e) => onChange({ ...p, remark: e.target.value })} />
+      <div className="space-y-1">
+        <textarea className={`${inputCls} ${descErr ? "border-red-500/60" : ""}`} rows={2} placeholder="Description" aria-invalid={!!descErr} value={p.description ?? ""} onChange={(e) => onChange({ ...p, description: e.target.value })} />
+        {descErr && <span role="alert" className="block text-xs text-red-400">{descErr}</span>}
+      </div>
+      <ValidatedBareInput value={p.personality ?? ""} onChange={(val) => onChange({ ...p, personality: val })} placeholder="Personality" validator={v.maxLen("Personality", 200)} />
+      <ValidatedBareInput value={p.remark ?? ""} onChange={(val) => onChange({ ...p, remark: val })} placeholder="Remark / quote" validator={v.maxLen("Remark", 240)} />
     </div>
   );
 }
