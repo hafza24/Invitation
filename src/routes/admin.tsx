@@ -649,10 +649,24 @@ function PersonEditor({ label, p, onChange }: { label: string; p: PersonLike; on
 
 function CountdownEditor({ section, onChange }: { section: CountdownSectionData; onChange: (p: Partial<CountdownSectionData>) => void }) {
   const local = section.date ? new Date(section.date).toISOString().slice(0,16) : "";
+  const dateErr = useFieldError(section.date, v.isoDate("Countdown date"));
   return (
     <div className="grid grid-cols-2 gap-3">
-      <Field label="Date"><input type="datetime-local" className={inputCls} value={local} onChange={(e) => onChange({ date: new Date(e.target.value).toISOString() })} /></Field>
-      <Field label="Label"><input className={inputCls} value={section.label ?? ""} onChange={(e) => onChange({ label: e.target.value })} /></Field>
+      <Field label="Date" error={dateErr}>
+        <input
+          type="datetime-local"
+          className={`${inputCls} ${dateErr ? "border-red-500/60" : ""}`}
+          value={local}
+          aria-invalid={!!dateErr}
+          onChange={(e) => {
+            const v2 = e.target.value;
+            if (!v2) { onChange({ date: "" }); return; }
+            const d = new Date(v2);
+            onChange({ date: isNaN(d.getTime()) ? "" : d.toISOString() });
+          }}
+        />
+      </Field>
+      <ValidatedInput label="Label" value={section.label ?? ""} onChange={(val) => onChange({ label: val })} validator={v.maxLen("Label", 60)} />
     </div>
   );
 }
