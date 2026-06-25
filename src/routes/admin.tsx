@@ -796,8 +796,8 @@ function VideoEditor({ section, onChange }: { section: VideoSectionData; onChang
           </select>
         </Field>
       </div>
-      <Field label="URL"><input className={inputCls} value={section.url} onChange={(e) => onChange({ url: e.target.value })} /></Field>
-      <Field label="Caption"><input className={inputCls} value={section.caption ?? ""} onChange={(e) => onChange({ caption: e.target.value })} /></Field>
+      <ValidatedInput label="URL" value={section.url} onChange={(val) => onChange({ url: val })} validator={v.requiredUrl("Video URL")} placeholder="https://…" />
+      <ValidatedInput label="Caption" value={section.caption ?? ""} onChange={(val) => onChange({ caption: val })} validator={v.maxLen("Caption", 200)} />
       <div className="flex gap-4 text-xs">
         <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.autoplay} onChange={(e) => onChange({ autoplay: e.target.checked })} /> Autoplay</label>
         <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.loop} onChange={(e) => onChange({ loop: e.target.checked })} /> Loop</label>
@@ -808,11 +808,21 @@ function VideoEditor({ section, onChange }: { section: VideoSectionData; onChang
 }
 
 function MusicEditor({ section, onChange }: { section: MusicSectionData; onChange: (p: Partial<MusicSectionData>) => void }) {
+  // Allow URL or a base64 data URI from upload. Only validate when it looks like a URL.
+  const urlErr = useFieldError(
+    section.url,
+    (val) => {
+      const t = typeof val === "string" ? val.trim() : "";
+      if (!t) return null; // optional
+      if (t.startsWith("data:")) return null;
+      return v.url("Audio URL")(t);
+    },
+  );
   return (
     <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
-      <Field label="Audio URL (mp3)">
+      <Field label="Audio URL (mp3)" error={urlErr} hint={!urlErr ? "Paste a direct mp3 URL or upload a file." : undefined}>
         <div className="flex gap-2 items-start">
-          <input className={inputCls} placeholder="https://… or upload" value={section.url} onChange={(e) => onChange({ url: e.target.value })} />
+          <input className={`${inputCls} ${urlErr ? "border-red-500/60" : ""}`} placeholder="https://… or upload" aria-invalid={!!urlErr} value={section.url} onChange={(e) => onChange({ url: e.target.value })} />
           <label className="px-3 py-2.5 rounded-lg bg-slate-800 text-xs cursor-pointer whitespace-nowrap">
             Upload
             <input type="file" accept="audio/*" className="hidden" onChange={async (e) => { const f = e.target.files?.[0]; if (f) onChange({ url: await fileToBase64(f) }); }} />
@@ -820,10 +830,10 @@ function MusicEditor({ section, onChange }: { section: MusicSectionData; onChang
         </div>
       </Field>
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Track title"><input className={inputCls} value={section.trackTitle ?? ""} onChange={(e) => onChange({ trackTitle: e.target.value })} /></Field>
-        <Field label="Artist"><input className={inputCls} value={section.artist ?? ""} onChange={(e) => onChange({ artist: e.target.value })} /></Field>
+        <ValidatedInput label="Track title" value={section.trackTitle ?? ""} onChange={(val) => onChange({ trackTitle: val })} validator={v.maxLen("Track title", 120)} />
+        <ValidatedInput label="Artist" value={section.artist ?? ""} onChange={(val) => onChange({ artist: val })} validator={v.maxLen("Artist", 120)} />
       </div>
-      <Field label="Cover art"><ImageInput value={section.coverArt} onChange={(v) => onChange({ coverArt: v })} /></Field>
+      <Field label="Cover art"><ImageInput value={section.coverArt} onChange={(v2) => onChange({ coverArt: v2 })} /></Field>
       {section.url && <audio src={section.url} controls className="w-full" />}
       <div className="flex gap-4 text-xs">
         <label className="flex items-center gap-2"><input type="checkbox" checked={!!section.autoplay} onChange={(e) => onChange({ autoplay: e.target.checked })} /> Autoplay</label>
@@ -839,11 +849,13 @@ function ContactsEditor({ section, onChange }: { section: ContactsSectionData; o
     <div className="space-y-3">
       {section.contacts.map((c, i) => (
         <div key={c.id} className="p-3 rounded bg-slate-900 border border-slate-800 grid grid-cols-2 gap-2">
-          <input className={inputCls} placeholder="Name" value={c.name} onChange={(e) => upd(i, { ...c, name: e.target.value })} />
-          <input className={inputCls} placeholder="Role" value={c.role} onChange={(e) => upd(i, { ...c, role: e.target.value })} />
-          <input className={inputCls} placeholder="Phone" value={c.phone ?? ""} onChange={(e) => upd(i, { ...c, phone: e.target.value })} />
-          <input className={inputCls} placeholder="WhatsApp" value={c.whatsapp ?? ""} onChange={(e) => upd(i, { ...c, whatsapp: e.target.value })} />
-          <input className={inputCls + " col-span-2"} placeholder="Email" value={c.email ?? ""} onChange={(e) => upd(i, { ...c, email: e.target.value })} />
+          <ValidatedBareInput placeholder="Name" value={c.name} onChange={(val) => upd(i, { ...c, name: val })} validator={[v.required("Contact name"), v.maxLen("Name", 80)]} />
+          <ValidatedBareInput placeholder="Role" value={c.role} onChange={(val) => upd(i, { ...c, role: val })} validator={[v.required("Role"), v.maxLen("Role", 80)]} />
+          <ValidatedBareInput placeholder="Phone" type="tel" value={c.phone ?? ""} onChange={(val) => upd(i, { ...c, phone: val })} validator={v.phone()} />
+          <ValidatedBareInput placeholder="WhatsApp" type="tel" value={c.whatsapp ?? ""} onChange={(val) => upd(i, { ...c, whatsapp: val })} validator={v.phone()} />
+          <div className="col-span-2">
+            <ValidatedBareInput placeholder="Email" type="email" value={c.email ?? ""} onChange={(val) => upd(i, { ...c, email: val })} validator={v.email()} />
+          </div>
           <button onClick={() => onChange({ contacts: section.contacts.filter((_, j) => j !== i) })} className="col-span-2 text-red-400 text-xs text-right">Remove</button>
         </div>
       ))}
@@ -856,15 +868,17 @@ function ScratchCardEditor({ section, onChange }: { section: ScratchCardSectionD
   const upd = (i: number, c: ScratchCard) => onChange({ cards: section.cards.map((x, j) => i === j ? c : x) });
   const remove = (i: number) => onChange({ cards: section.cards.filter((_, j) => j !== i) });
   const add = () => onChange({ cards: [...section.cards, { id: uid(), label: "Surprise", revealTitle: "Hidden message", revealMessage: "", coverColor: "#b08a4f", coverText: "SCRATCH HERE" }] });
+  const brushErr = useFieldError(section.brushSize, v.numberRange("Brush size", 8, 80));
+  const threshErr = useFieldError(section.revealThreshold, v.numberRange("Threshold", 0.1, 1));
   return (
     <div className="space-y-3 bg-slate-900/50 p-4 rounded-lg">
-      <Field label="Prompt"><input className={inputCls} value={section.prompt ?? ""} onChange={(e) => onChange({ prompt: e.target.value })} /></Field>
+      <ValidatedInput label="Prompt" value={section.prompt ?? ""} onChange={(val) => onChange({ prompt: val })} validator={v.maxLen("Prompt", 200)} />
       <div className="grid grid-cols-2 gap-3">
-        <Field label="Brush size (px)">
-          <input type="number" min={8} max={80} className={inputCls} value={section.brushSize ?? 28} onChange={(e) => onChange({ brushSize: Number(e.target.value) || 28 })} />
+        <Field label="Brush size (px)" error={brushErr}>
+          <input type="number" min={8} max={80} className={`${inputCls} ${brushErr ? "border-red-500/60" : ""}`} aria-invalid={!!brushErr} value={section.brushSize ?? 28} onChange={(e) => onChange({ brushSize: Number(e.target.value) || 28 })} />
         </Field>
-        <Field label="Auto-reveal threshold (0–1)">
-          <input type="number" step={0.05} min={0.1} max={1} className={inputCls} value={section.revealThreshold ?? 0.55} onChange={(e) => onChange({ revealThreshold: Number(e.target.value) || 0.55 })} />
+        <Field label="Auto-reveal threshold (0–1)" error={threshErr}>
+          <input type="number" step={0.05} min={0.1} max={1} className={`${inputCls} ${threshErr ? "border-red-500/60" : ""}`} aria-invalid={!!threshErr} value={section.revealThreshold ?? 0.55} onChange={(e) => onChange({ revealThreshold: Number(e.target.value) || 0.55 })} />
         </Field>
       </div>
       <div className="space-y-3">
@@ -874,17 +888,19 @@ function ScratchCardEditor({ section, onChange }: { section: ScratchCardSectionD
               <strong>{c.revealTitle || c.label || `Card ${i + 1}`}</strong>
               <button onClick={() => remove(i)} className="text-red-400 text-xs">Remove</button>
             </div>
-            <input className={inputCls} placeholder="Label (corner badge)" value={c.label ?? ""} onChange={(e) => upd(i, { ...c, label: e.target.value })} />
-            <input className={inputCls} placeholder="Reveal title" value={c.revealTitle ?? ""} onChange={(e) => upd(i, { ...c, revealTitle: e.target.value })} />
-            <textarea className={inputCls} rows={2} placeholder="Reveal message" value={c.revealMessage ?? ""} onChange={(e) => upd(i, { ...c, revealMessage: e.target.value })} />
-            <Field label="Reveal image (optional)"><ImageInput value={c.revealImage} onChange={(v) => upd(i, { ...c, revealImage: v })} /></Field>
+            <ValidatedBareInput placeholder="Label (corner badge)" value={c.label ?? ""} onChange={(val) => upd(i, { ...c, label: val })} validator={v.maxLen("Label", 40)} />
+            <ValidatedBareInput placeholder="Reveal title" value={c.revealTitle ?? ""} onChange={(val) => upd(i, { ...c, revealTitle: val })} validator={[v.required("Reveal title"), v.maxLen("Reveal title", 120)]} />
+            <Field label="Reveal message" error={useFieldError(c.revealMessage ?? "", v.maxLen("Reveal message", 400))}>
+              <textarea className={inputCls} rows={2} placeholder="Reveal message" value={c.revealMessage ?? ""} onChange={(e) => upd(i, { ...c, revealMessage: e.target.value })} />
+            </Field>
+            <Field label="Reveal image (optional)"><ImageInput value={c.revealImage} onChange={(v2) => upd(i, { ...c, revealImage: v2 })} /></Field>
             <div className="grid grid-cols-2 gap-2">
               <Field label="Cover color">
                 <input type="color" className={inputCls + " h-11 p-1"} value={c.coverColor ?? "#b08a4f"} onChange={(e) => upd(i, { ...c, coverColor: e.target.value })} />
               </Field>
-              <Field label="Cover text"><input className={inputCls} placeholder="SCRATCH HERE" value={c.coverText ?? ""} onChange={(e) => upd(i, { ...c, coverText: e.target.value })} /></Field>
+              <ValidatedInput label="Cover text" value={c.coverText ?? ""} onChange={(val) => upd(i, { ...c, coverText: val })} validator={v.maxLen("Cover text", 40)} placeholder="SCRATCH HERE" />
             </div>
-            <Field label="Cover image (overrides color)"><ImageInput value={c.coverImage} onChange={(v) => upd(i, { ...c, coverImage: v })} /></Field>
+            <Field label="Cover image (overrides color)"><ImageInput value={c.coverImage} onChange={(v2) => upd(i, { ...c, coverImage: v2 })} /></Field>
           </div>
         ))}
         <button onClick={add} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add card</button>
