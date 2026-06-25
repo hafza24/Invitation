@@ -161,28 +161,19 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   ];
 
   return (
-    <div className="min-h-dvh flex flex-col md:flex-row bg-slate-950 text-slate-100">
-      {/* Sidebar (desktop) / top bar (mobile) */}
-      <aside className="md:w-64 md:min-h-dvh md:border-r border-slate-800 md:p-6 md:space-y-1 md:sticky md:top-0 md:self-start bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-slate-950/70 z-20">
-        {/* Mobile top bar */}
-        <div className="md:hidden sticky top-0 border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+    <div className="min-h-dvh flex flex-col md:flex-row bg-gradient-to-br from-slate-950 via-slate-950 to-slate-900 text-slate-100">
+      {/* Mobile top bar */}
+      <header className="md:hidden sticky top-0 z-30 border-b border-slate-800 bg-slate-950/85 backdrop-blur supports-[backdrop-filter]:bg-slate-950/70">
+        <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-base font-semibold leading-tight truncate">Event Studio</h1>
-            <p className="text-[11px] text-slate-400 truncate">{site.meta.eventName || site.meta.eventType}</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-amber-300/80">Studio</p>
+            <h1 className="text-sm font-semibold leading-tight truncate">{site.meta.eventName || site.meta.eventType || "Event"}</h1>
           </div>
-          <div className="shrink-0"><SyncIndicator /></div>
+          <SyncIndicator />
         </div>
-
-        {/* Desktop header */}
-        <div className="hidden md:block mb-6">
-          <h1 className="text-xl font-semibold tracking-tight">Event Studio</h1>
-          <p className="text-xs text-slate-400 truncate">{site.meta.eventName || site.meta.eventType}</p>
-        </div>
-
-        {/* Tabs */}
         <nav
           aria-label="Studio sections"
-          className="md:block flex gap-1 overflow-x-auto px-3 md:px-0 py-2 md:py-0 border-b md:border-b-0 border-slate-800 [-webkit-overflow-scrolling:touch]"
+          className="flex gap-1 overflow-x-auto px-3 pb-2 [-webkit-overflow-scrolling:touch]"
         >
           {tabs.map(([k, l]) => {
             const active = tab === k;
@@ -192,9 +183,39 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 type="button"
                 onClick={() => setTab(k)}
                 aria-current={active ? "page" : undefined}
-                className={`shrink-0 md:block md:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
                   active
-                    ? "bg-amber-500/15 text-amber-300"
+                    ? "bg-amber-400 text-slate-950 font-medium"
+                    : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                {l}
+              </button>
+            );
+          })}
+        </nav>
+      </header>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex md:w-64 md:min-h-dvh flex-col border-r border-slate-800/80 p-6 sticky top-0 self-start bg-slate-950/60 backdrop-blur z-20">
+        <div className="mb-7">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300/80">Event Studio</p>
+          <h1 className="text-lg font-semibold tracking-tight mt-1">{site.meta.eventName || "Untitled event"}</h1>
+          <p className="text-xs text-slate-500 truncate">{site.meta.eventType}</p>
+        </div>
+
+        <nav aria-label="Studio sections" className="flex flex-col gap-1">
+          {tabs.map(([k, l]) => {
+            const active = tab === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setTab(k)}
+                aria-current={active ? "page" : undefined}
+                className={`text-left px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
+                  active
+                    ? "bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/30"
                     : "text-slate-300 hover:bg-slate-900 hover:text-slate-100"
                 }`}
               >
@@ -204,19 +225,20 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           })}
         </nav>
 
-        {/* Desktop-only utility column */}
-        <div className="hidden md:block pt-6 space-y-2">
+        <div className="mt-auto pt-6 space-y-2 border-t border-slate-800/80">
           <SyncIndicator />
           <button
             type="button"
             onClick={() => setPreview((p) => !p)}
             aria-pressed={preview}
-            className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-colors ${preview ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800 text-slate-300"}`}
+            className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${preview ? "bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/30" : "bg-slate-900 hover:bg-slate-800 text-slate-300"}`}
           >
             {preview ? "✓ Live preview on" : "Show live preview"}
           </button>
-          <Link to="/" className="block text-xs text-slate-400 hover:text-slate-200 underline">View site →</Link>
-          <button type="button" onClick={onLogout} className="block text-xs text-slate-400 hover:text-slate-200 underline">Sign out</button>
+          <div className="flex items-center gap-4 text-xs text-slate-400 px-1">
+            <Link to="/" className="hover:text-slate-200 underline-offset-2 hover:underline">View site</Link>
+            <button type="button" onClick={onLogout} className="hover:text-slate-200 underline-offset-2 hover:underline">Sign out</button>
+          </div>
         </div>
       </aside>
 
