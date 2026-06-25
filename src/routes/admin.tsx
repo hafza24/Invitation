@@ -696,19 +696,21 @@ function FunctionsEditor({ section, onChange }: { section: FunctionsSectionData;
           <div className="flex justify-between items-center"><strong>{f.name || "Function"}</strong>
             <button onClick={() => onChange({ functions: section.functions.filter((_, j) => j !== i) })} className="text-red-400 text-xs">Remove</button>
           </div>
-          <input className={inputCls} placeholder="Name" value={f.name} onChange={(e) => upd(i, { ...f, name: e.target.value })} />
+          <ValidatedBareInput placeholder="Name" value={f.name} onChange={(v2) => upd(i, { ...f, name: v2 })} validator={[v.required("Function name"), v.maxLen("Name", 80)]} />
           <div className="grid grid-cols-2 gap-2">
-            <input className={inputCls} placeholder="Date" value={f.date} onChange={(e) => upd(i, { ...f, date: e.target.value })} />
-            <input className={inputCls} placeholder="Time" value={f.time} onChange={(e) => upd(i, { ...f, time: e.target.value })} />
-            <input className={inputCls} placeholder="Venue" value={f.venue} onChange={(e) => upd(i, { ...f, venue: e.target.value })} />
-            <input className={inputCls} placeholder="Dress code" value={f.dressCode ?? ""} onChange={(e) => upd(i, { ...f, dressCode: e.target.value })} />
+            <ValidatedBareInput placeholder="Date (e.g. August 14, 2026)" value={f.date} onChange={(v2) => upd(i, { ...f, date: v2 })} validator={[v.required("Date"), v.maxLen("Date", 60)]} />
+            <ValidatedBareInput placeholder="Time (e.g. 6:00 PM)" value={f.time} onChange={(v2) => upd(i, { ...f, time: v2 })} validator={[v.required("Time"), v.maxLen("Time", 40)]} />
+            <ValidatedBareInput placeholder="Venue" value={f.venue} onChange={(v2) => upd(i, { ...f, venue: v2 })} validator={[v.required("Venue"), v.maxLen("Venue", 120)]} />
+            <ValidatedBareInput placeholder="Dress code" value={f.dressCode ?? ""} onChange={(v2) => upd(i, { ...f, dressCode: v2 })} validator={v.maxLen("Dress code", 80)} />
           </div>
-          <input className={inputCls} placeholder="Address" value={f.address} onChange={(e) => upd(i, { ...f, address: e.target.value })} />
-          <input className={inputCls} placeholder="Theme" value={f.theme ?? ""} onChange={(e) => upd(i, { ...f, theme: e.target.value })} />
-          <textarea className={inputCls} rows={2} placeholder="Description" value={f.description ?? ""} onChange={(e) => upd(i, { ...f, description: e.target.value })} />
-          <ImageInput value={f.cover} onChange={(v) => upd(i, { ...f, cover: v })} />
-          <input className={inputCls} placeholder="Google Maps link" value={f.mapsUrl ?? ""} onChange={(e) => upd(i, { ...f, mapsUrl: e.target.value })} />
-          <input className={inputCls} placeholder="Google Maps embed URL (iframe src)" value={f.mapsEmbedUrl ?? ""} onChange={(e) => upd(i, { ...f, mapsEmbedUrl: e.target.value })} />
+          <ValidatedBareInput placeholder="Address" value={f.address} onChange={(v2) => upd(i, { ...f, address: v2 })} validator={[v.required("Address"), v.maxLen("Address", 200)]} />
+          <ValidatedBareInput placeholder="Theme" value={f.theme ?? ""} onChange={(v2) => upd(i, { ...f, theme: v2 })} validator={v.maxLen("Theme", 120)} />
+          <Field label="Description" error={useFieldError(f.description ?? "", v.maxLen("Description", 500))}>
+            <textarea className={inputCls} rows={2} placeholder="Description" value={f.description ?? ""} onChange={(e) => upd(i, { ...f, description: e.target.value })} />
+          </Field>
+          <ImageInput value={f.cover} onChange={(v2) => upd(i, { ...f, cover: v2 })} />
+          <ValidatedBareInput placeholder="Google Maps link (https://…)" value={f.mapsUrl ?? ""} onChange={(v2) => upd(i, { ...f, mapsUrl: v2 })} validator={v.url("Maps link")} />
+          <ValidatedBareInput placeholder="Google Maps embed URL (iframe src)" value={f.mapsEmbedUrl ?? ""} onChange={(v2) => upd(i, { ...f, mapsEmbedUrl: v2 })} validator={v.embedUrl("Maps embed URL")} />
         </div>
       ))}
       <button onClick={() => onChange({ functions: [...section.functions, { id: uid(), name: "New function", date: "", time: "", venue: "", address: "" }] })} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add function</button>
@@ -725,10 +727,12 @@ function TimelineEditor({ section, onChange }: { section: TimelineSectionData; o
           <div className="flex justify-between"><strong>{m.title || "Milestone"}</strong>
             <button onClick={() => onChange({ milestones: section.milestones.filter((_, j) => j !== i) })} className="text-red-400 text-xs">Remove</button>
           </div>
-          <input className={inputCls} placeholder="Title" value={m.title} onChange={(e) => upd(i, { ...m, title: e.target.value })} />
-          <input className={inputCls} placeholder="Date" value={m.date} onChange={(e) => upd(i, { ...m, date: e.target.value })} />
-          <textarea className={inputCls} rows={2} placeholder="Description" value={m.description ?? ""} onChange={(e) => upd(i, { ...m, description: e.target.value })} />
-          <ImageInput value={m.image} onChange={(v) => upd(i, { ...m, image: v })} />
+          <ValidatedBareInput placeholder="Title" value={m.title} onChange={(v2) => upd(i, { ...m, title: v2 })} validator={[v.required("Milestone title"), v.maxLen("Title", 120)]} />
+          <ValidatedBareInput placeholder="Date" value={m.date} onChange={(v2) => upd(i, { ...m, date: v2 })} validator={[v.required("Date"), v.maxLen("Date", 60)]} />
+          <Field label="Description" error={useFieldError(m.description ?? "", v.maxLen("Description", 400))}>
+            <textarea className={inputCls} rows={2} placeholder="Description" value={m.description ?? ""} onChange={(e) => upd(i, { ...m, description: e.target.value })} />
+          </Field>
+          <ImageInput value={m.image} onChange={(v2) => upd(i, { ...m, image: v2 })} />
         </div>
       ))}
       <button onClick={() => onChange({ milestones: [...section.milestones, { id: uid(), title: "New milestone", date: "" }] })} className="px-3 py-2 rounded bg-amber-500 text-slate-950 text-sm">+ Add milestone</button>
