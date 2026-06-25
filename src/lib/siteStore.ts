@@ -625,6 +625,17 @@ function emit() {
   for (const l of listeners) l();
 }
 
+// A validation gate set from the admin UI. When true, autosave is held back
+// so invalid wedding/event/contact info can't be persisted.
+let saveBlocked = false;
+let saveBlockReason: string | null = null;
+export function setSaveBlocked(blocked: boolean, reason: string | null = null) {
+  saveBlocked = blocked;
+  saveBlockReason = blocked ? reason ?? "Fix validation errors to save" : null;
+  if (blocked) setSync("error", saveBlockReason);
+  else if (syncStatus === "error" && syncError === saveBlockReason) setSync("ready");
+}
+
 function scheduleSave() {
   if (typeof window === "undefined") return;
   if (saveTimer) clearTimeout(saveTimer);
@@ -634,6 +645,10 @@ function scheduleSave() {
 }
 
 async function flushSave() {
+  if (saveBlocked) {
+    setSync("error", saveBlockReason ?? "Fix validation errors to save");
+    return;
+  }
   const pw = typeof window !== "undefined" ? localStorage.getItem(PW_KEY) : null;
   if (!pw) {
     // No admin password = can't persist remotely yet; cache only.
@@ -652,6 +667,7 @@ async function flushSave() {
     setSync("error", e instanceof Error ? e.message : String(e));
   }
 }
+
 
 export function setState(updater: (s: SiteState) => SiteState) {
   ensureHydrated();
