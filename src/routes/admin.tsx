@@ -378,14 +378,92 @@ function SectionsTab({ site }: { site: SiteState }) {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children, error, hint }: { label: string; children: React.ReactNode; error?: string | null; hint?: string }) {
   return (
     <label className="block space-y-1">
       <span className="text-xs uppercase tracking-wider text-slate-400">{label}</span>
       {children}
+      {error ? (
+        <span role="alert" className="block text-xs text-red-400">{error}</span>
+      ) : hint ? (
+        <span className="block text-xs text-slate-500">{hint}</span>
+      ) : null}
     </label>
   );
 }
+
+/**
+ * ValidatedInput — a single-line input wired to a field validator.
+ * Registers its error in the global validation registry so the admin shell
+ * can show a banner and block save while anything is invalid.
+ */
+function ValidatedInput({
+  label,
+  value,
+  onChange,
+  validator,
+  placeholder,
+  type = "text",
+  hint,
+  className,
+}: {
+  label: string;
+  value: string;
+  onChange: (v: string) => void;
+  validator?: Validator | Validator[];
+  placeholder?: string;
+  type?: string;
+  hint?: string;
+  className?: string;
+}) {
+  const err = useFieldError(value, validator);
+  return (
+    <Field label={label} error={err} hint={hint}>
+      <input
+        type={type}
+        className={`${inputCls} ${err ? "border-red-500/60 focus:border-red-400 focus:ring-red-400/20" : ""} ${className ?? ""}`}
+        value={value}
+        placeholder={placeholder}
+        aria-invalid={!!err}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </Field>
+  );
+}
+
+/** Bare input (no Field wrapper) for grid layouts that don't have a label. */
+function ValidatedBareInput({
+  value,
+  onChange,
+  validator,
+  placeholder,
+  type = "text",
+  className,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  validator?: Validator | Validator[];
+  placeholder?: string;
+  type?: string;
+  className?: string;
+}) {
+  const err = useFieldError(value, validator);
+  return (
+    <div className="space-y-1">
+      <input
+        type={type}
+        className={`${inputCls} ${err ? "border-red-500/60 focus:border-red-400 focus:ring-red-400/20" : ""} ${className ?? ""}`}
+        value={value}
+        placeholder={placeholder}
+        aria-invalid={!!err}
+        aria-label={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {err && <span role="alert" className="block text-xs text-red-400">{err}</span>}
+    </div>
+  );
+}
+
 const inputCls = "w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-sm placeholder:text-slate-500 transition-colors focus:border-amber-400/70 focus:ring-2 focus:ring-amber-400/20 focus:outline-none";
 
 function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { section: Section; onChange: (p: Partial<Section>) => void; onDelete: () => void; onMoveUp: () => void; onMoveDown: () => void; }) {
