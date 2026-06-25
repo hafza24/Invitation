@@ -161,28 +161,19 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
   ];
 
   return (
-    <div className="min-h-dvh flex flex-col md:flex-row bg-slate-950 text-slate-100">
-      {/* Sidebar (desktop) / top bar (mobile) */}
-      <aside className="md:w-64 md:min-h-dvh md:border-r border-slate-800 md:p-6 md:space-y-1 md:sticky md:top-0 md:self-start bg-slate-950/95 backdrop-blur supports-[backdrop-filter]:bg-slate-950/70 z-20">
-        {/* Mobile top bar */}
-        <div className="md:hidden sticky top-0 border-b border-slate-800 px-4 py-3 flex items-center justify-between gap-3">
+    <div className="min-h-dvh flex flex-col md:flex-row bg-gradient-to-br from-slate-950 via-slate-950 to-slate-900 text-slate-100">
+      {/* Mobile top bar */}
+      <header className="md:hidden sticky top-0 z-30 border-b border-slate-800 bg-slate-950/85 backdrop-blur supports-[backdrop-filter]:bg-slate-950/70">
+        <div className="px-4 py-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
-            <h1 className="text-base font-semibold leading-tight truncate">Event Studio</h1>
-            <p className="text-[11px] text-slate-400 truncate">{site.meta.eventName || site.meta.eventType}</p>
+            <p className="text-[10px] uppercase tracking-[0.3em] text-amber-300/80">Studio</p>
+            <h1 className="text-sm font-semibold leading-tight truncate">{site.meta.eventName || site.meta.eventType || "Event"}</h1>
           </div>
-          <div className="shrink-0"><SyncIndicator /></div>
+          <SyncIndicator />
         </div>
-
-        {/* Desktop header */}
-        <div className="hidden md:block mb-6">
-          <h1 className="text-xl font-semibold tracking-tight">Event Studio</h1>
-          <p className="text-xs text-slate-400 truncate">{site.meta.eventName || site.meta.eventType}</p>
-        </div>
-
-        {/* Tabs */}
         <nav
           aria-label="Studio sections"
-          className="md:block flex gap-1 overflow-x-auto px-3 md:px-0 py-2 md:py-0 border-b md:border-b-0 border-slate-800 [-webkit-overflow-scrolling:touch]"
+          className="flex gap-1 overflow-x-auto px-3 pb-2 [-webkit-overflow-scrolling:touch]"
         >
           {tabs.map(([k, l]) => {
             const active = tab === k;
@@ -192,9 +183,39 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
                 type="button"
                 onClick={() => setTab(k)}
                 aria-current={active ? "page" : undefined}
-                className={`shrink-0 md:block md:w-full text-left px-3 py-2 rounded-lg text-sm whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
                   active
-                    ? "bg-amber-500/15 text-amber-300"
+                    ? "bg-amber-400 text-slate-950 font-medium"
+                    : "bg-slate-900 text-slate-300 hover:bg-slate-800"
+                }`}
+              >
+                {l}
+              </button>
+            );
+          })}
+        </nav>
+      </header>
+
+      {/* Desktop sidebar */}
+      <aside className="hidden md:flex md:w-64 md:min-h-dvh flex-col border-r border-slate-800/80 p-6 sticky top-0 self-start bg-slate-950/60 backdrop-blur z-20">
+        <div className="mb-7">
+          <p className="text-[10px] uppercase tracking-[0.35em] text-amber-300/80">Event Studio</p>
+          <h1 className="text-lg font-semibold tracking-tight mt-1">{site.meta.eventName || "Untitled event"}</h1>
+          <p className="text-xs text-slate-500 truncate">{site.meta.eventType}</p>
+        </div>
+
+        <nav aria-label="Studio sections" className="flex flex-col gap-1">
+          {tabs.map(([k, l]) => {
+            const active = tab === k;
+            return (
+              <button
+                key={k}
+                type="button"
+                onClick={() => setTab(k)}
+                aria-current={active ? "page" : undefined}
+                className={`text-left px-3 py-2 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
+                  active
+                    ? "bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/30"
                     : "text-slate-300 hover:bg-slate-900 hover:text-slate-100"
                 }`}
               >
@@ -204,19 +225,20 @@ function Dashboard({ onLogout }: { onLogout: () => void }) {
           })}
         </nav>
 
-        {/* Desktop-only utility column */}
-        <div className="hidden md:block pt-6 space-y-2">
+        <div className="mt-auto pt-6 space-y-2 border-t border-slate-800/80">
           <SyncIndicator />
           <button
             type="button"
             onClick={() => setPreview((p) => !p)}
             aria-pressed={preview}
-            className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-colors ${preview ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800 text-slate-300"}`}
+            className={`w-full text-left text-xs px-3 py-2 rounded-lg transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${preview ? "bg-amber-500/15 text-amber-200 ring-1 ring-amber-400/30" : "bg-slate-900 hover:bg-slate-800 text-slate-300"}`}
           >
             {preview ? "✓ Live preview on" : "Show live preview"}
           </button>
-          <Link to="/" className="block text-xs text-slate-400 hover:text-slate-200 underline">View site →</Link>
-          <button type="button" onClick={onLogout} className="block text-xs text-slate-400 hover:text-slate-200 underline">Sign out</button>
+          <div className="flex items-center gap-4 text-xs text-slate-400 px-1">
+            <Link to="/" className="hover:text-slate-200 underline-offset-2 hover:underline">View site</Link>
+            <button type="button" onClick={onLogout} className="hover:text-slate-200 underline-offset-2 hover:underline">Sign out</button>
+          </div>
         </div>
       </aside>
 
@@ -295,20 +317,44 @@ function SectionsTab({ site }: { site: SiteState }) {
   return (
     <div className="grid md:grid-cols-[280px_1fr] gap-6">
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Sections</h2>
-        <div className="space-y-1">
-          {site.sections.map((s) => (
-            <button key={s.id} onClick={() => setSelectedId(s.id)} className={`w-full text-left p-3 rounded-lg text-sm flex items-center justify-between ${selectedId === s.id ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800"}`}>
-              <span className="truncate">{s.kind} {!s.enabled && "· off"}</span>
-              <span className="opacity-50 text-xs">{s.title ?? ""}</span>
-            </button>
-          ))}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold tracking-tight">Sections</h2>
+          <span className="text-xs text-slate-500">{site.sections.length}</span>
         </div>
-        <details className="bg-slate-900 rounded-lg p-3">
-          <summary className="cursor-pointer text-sm">+ Add section</summary>
+        <div className="space-y-1.5">
+          {site.sections.map((s) => {
+            const active = selectedId === s.id;
+            const title = (s as { title?: string }).title?.trim();
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSelectedId(s.id)}
+                aria-current={active ? "true" : undefined}
+                className={`group w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
+                  active
+                    ? "bg-amber-500/10 border-amber-400/40 text-amber-100"
+                    : "bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.enabled ? "bg-emerald-400" : "bg-slate-600"}`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-slate-100">{title || <span className="capitalize text-slate-300">{s.kind}</span>}</span>
+                  {title && <span className="block truncate text-[11px] uppercase tracking-wider text-slate-500">{s.kind}</span>}
+                </span>
+                {!s.enabled && <span className="text-[10px] uppercase tracking-wider text-slate-500">Off</span>}
+              </button>
+            );
+          })}
+        </div>
+        <details className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 open:bg-slate-900">
+          <summary className="cursor-pointer text-sm text-slate-200 select-none">+ Add section</summary>
           <div className="grid grid-cols-2 gap-2 mt-3">
             {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","music","wishes","contacts","scratchcard"] as Section["kind"][]).map(k => (
-              <button key={k} onClick={() => add(k)} className="p-2 text-xs rounded bg-slate-800 hover:bg-slate-700 capitalize">{k}</button>
+              <button key={k} type="button" onClick={() => add(k)} className="p-2 text-xs rounded-md bg-slate-800/80 hover:bg-slate-700 capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">{k}</button>
             ))}
           </div>
         </details>
@@ -338,20 +384,28 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
-const inputCls = "w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-sm";
+const inputCls = "w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-sm placeholder:text-slate-500 transition-colors focus:border-amber-400/70 focus:ring-2 focus:ring-amber-400/20 focus:outline-none";
 
 function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { section: Section; onChange: (p: Partial<Section>) => void; onDelete: () => void; onMoveUp: () => void; onMoveDown: () => void; }) {
+  const title = (section as { title?: string }).title?.trim();
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="text-lg font-semibold capitalize">{section.kind}</h3>
-        <div className="flex gap-2 text-xs">
-          <button onClick={onMoveUp} aria-label="Move section up" title="Move up" className="min-h-11 min-w-11 px-3 rounded bg-slate-800 hover:bg-slate-700">↑</button>
-          <button onClick={onMoveDown} aria-label="Move section down" title="Move down" className="min-h-11 min-w-11 px-3 rounded bg-slate-800 hover:bg-slate-700">↓</button>
-          <label className="min-h-11 px-3 rounded bg-slate-800 hover:bg-slate-700 flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={section.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} /> Enabled
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-amber-300/80">Editing</p>
+          <h3 className="text-lg font-semibold capitalize truncate">{title || section.kind}</h3>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <div className="inline-flex rounded-lg border border-slate-800 bg-slate-900 overflow-hidden">
+            <button type="button" onClick={onMoveUp} aria-label="Move section up" title="Move up" className="min-h-10 min-w-10 px-3 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">↑</button>
+            <span className="w-px bg-slate-800" aria-hidden="true" />
+            <button type="button" onClick={onMoveDown} aria-label="Move section down" title="Move down" className="min-h-10 min-w-10 px-3 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">↓</button>
+          </div>
+          <label className={`min-h-10 px-3 rounded-lg border flex items-center gap-2 cursor-pointer transition-colors ${section.enabled ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-slate-800 bg-slate-900 text-slate-400"}`}>
+            <input type="checkbox" className="accent-emerald-400" checked={section.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} />
+            {section.enabled ? "Enabled" : "Disabled"}
           </label>
-          <button onClick={onDelete} aria-label="Delete section" className="min-h-11 px-3 rounded bg-red-600/80 hover:bg-red-600">Delete</button>
+          <button type="button" onClick={onDelete} aria-label="Delete section" className="min-h-10 px-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60">Delete</button>
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
