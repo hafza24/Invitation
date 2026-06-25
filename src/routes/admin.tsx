@@ -362,20 +362,28 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
-const inputCls = "w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-sm";
+const inputCls = "w-full p-2.5 rounded-lg bg-slate-900 border border-slate-800 text-sm placeholder:text-slate-500 transition-colors focus:border-amber-400/70 focus:ring-2 focus:ring-amber-400/20 focus:outline-none";
 
 function SectionEditor({ section, onChange, onDelete, onMoveUp, onMoveDown }: { section: Section; onChange: (p: Partial<Section>) => void; onDelete: () => void; onMoveUp: () => void; onMoveDown: () => void; }) {
+  const title = (section as { title?: string }).title?.trim();
   return (
     <div className="space-y-5">
-      <div className="flex items-center justify-between flex-wrap gap-3">
-        <h3 className="text-lg font-semibold capitalize">{section.kind}</h3>
-        <div className="flex gap-2 text-xs">
-          <button onClick={onMoveUp} aria-label="Move section up" title="Move up" className="min-h-11 min-w-11 px-3 rounded bg-slate-800 hover:bg-slate-700">↑</button>
-          <button onClick={onMoveDown} aria-label="Move section down" title="Move down" className="min-h-11 min-w-11 px-3 rounded bg-slate-800 hover:bg-slate-700">↓</button>
-          <label className="min-h-11 px-3 rounded bg-slate-800 hover:bg-slate-700 flex items-center gap-2 cursor-pointer">
-            <input type="checkbox" checked={section.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} /> Enabled
+      <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-4 flex items-center justify-between flex-wrap gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] uppercase tracking-[0.3em] text-amber-300/80">Editing</p>
+          <h3 className="text-lg font-semibold capitalize truncate">{title || section.kind}</h3>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <div className="inline-flex rounded-lg border border-slate-800 bg-slate-900 overflow-hidden">
+            <button type="button" onClick={onMoveUp} aria-label="Move section up" title="Move up" className="min-h-10 min-w-10 px-3 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">↑</button>
+            <span className="w-px bg-slate-800" aria-hidden="true" />
+            <button type="button" onClick={onMoveDown} aria-label="Move section down" title="Move down" className="min-h-10 min-w-10 px-3 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">↓</button>
+          </div>
+          <label className={`min-h-10 px-3 rounded-lg border flex items-center gap-2 cursor-pointer transition-colors ${section.enabled ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-300" : "border-slate-800 bg-slate-900 text-slate-400"}`}>
+            <input type="checkbox" className="accent-emerald-400" checked={section.enabled} onChange={(e) => onChange({ enabled: e.target.checked })} />
+            {section.enabled ? "Enabled" : "Disabled"}
           </label>
-          <button onClick={onDelete} aria-label="Delete section" className="min-h-11 px-3 rounded bg-red-600/80 hover:bg-red-600">Delete</button>
+          <button type="button" onClick={onDelete} aria-label="Delete section" className="min-h-10 px-3 rounded-lg border border-red-500/30 bg-red-500/10 text-red-300 hover:bg-red-500/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400/60">Delete</button>
         </div>
       </div>
       <div className="grid sm:grid-cols-2 gap-3">
