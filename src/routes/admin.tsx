@@ -295,20 +295,44 @@ function SectionsTab({ site }: { site: SiteState }) {
   return (
     <div className="grid md:grid-cols-[280px_1fr] gap-6">
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold">Sections</h2>
-        <div className="space-y-1">
-          {site.sections.map((s) => (
-            <button key={s.id} onClick={() => setSelectedId(s.id)} className={`w-full text-left p-3 rounded-lg text-sm flex items-center justify-between ${selectedId === s.id ? "bg-amber-500/15 text-amber-300" : "bg-slate-900 hover:bg-slate-800"}`}>
-              <span className="truncate">{s.kind} {!s.enabled && "· off"}</span>
-              <span className="opacity-50 text-xs">{s.title ?? ""}</span>
-            </button>
-          ))}
+        <div className="flex items-center justify-between">
+          <h2 className="text-lg font-semibold tracking-tight">Sections</h2>
+          <span className="text-xs text-slate-500">{site.sections.length}</span>
         </div>
-        <details className="bg-slate-900 rounded-lg p-3">
-          <summary className="cursor-pointer text-sm">+ Add section</summary>
+        <div className="space-y-1.5">
+          {site.sections.map((s) => {
+            const active = selectedId === s.id;
+            const title = (s as { title?: string }).title?.trim();
+            return (
+              <button
+                key={s.id}
+                type="button"
+                onClick={() => setSelectedId(s.id)}
+                aria-current={active ? "true" : undefined}
+                className={`group w-full text-left px-3 py-2.5 rounded-lg text-sm flex items-center gap-3 border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60 ${
+                  active
+                    ? "bg-amber-500/10 border-amber-400/40 text-amber-100"
+                    : "bg-slate-900/60 border-slate-800 hover:border-slate-700 hover:bg-slate-900"
+                }`}
+              >
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 rounded-full shrink-0 ${s.enabled ? "bg-emerald-400" : "bg-slate-600"}`}
+                />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-slate-100">{title || <span className="capitalize text-slate-300">{s.kind}</span>}</span>
+                  {title && <span className="block truncate text-[11px] uppercase tracking-wider text-slate-500">{s.kind}</span>}
+                </span>
+                {!s.enabled && <span className="text-[10px] uppercase tracking-wider text-slate-500">Off</span>}
+              </button>
+            );
+          })}
+        </div>
+        <details className="rounded-lg border border-slate-800 bg-slate-900/60 p-3 open:bg-slate-900">
+          <summary className="cursor-pointer text-sm text-slate-200 select-none">+ Add section</summary>
           <div className="grid grid-cols-2 gap-2 mt-3">
             {(["hero","countdown","chapter","profiles","functions","timeline","gallery","video","music","wishes","contacts","scratchcard"] as Section["kind"][]).map(k => (
-              <button key={k} onClick={() => add(k)} className="p-2 text-xs rounded bg-slate-800 hover:bg-slate-700 capitalize">{k}</button>
+              <button key={k} type="button" onClick={() => add(k)} className="p-2 text-xs rounded-md bg-slate-800/80 hover:bg-slate-700 capitalize transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400/60">{k}</button>
             ))}
           </div>
         </details>
